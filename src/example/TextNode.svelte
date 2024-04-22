@@ -1,10 +1,15 @@
 <script lang="ts">
-  import { Handle, Position, type NodeProps, useSvelteFlow } from '@xyflow/svelte';
+  import {
+    Handle,
+    Position,
+    type NodeProps,
+    useSvelteFlow,
+  } from "@xyflow/svelte";
 
   type $$Props = NodeProps;
 
-  export let id: $$Props['id'];
-  export let data: $$Props['data'];
+  export let id: $$Props["id"];
+  export let data: $$Props["data"];
 
   const { updateNodeData } = useSvelteFlow();
 </script>

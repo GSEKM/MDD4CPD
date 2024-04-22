@@ -4,19 +4,21 @@
     Position,
     useHandleConnections,
     useNodesData,
-    type NodeProps
-  } from '@xyflow/svelte';
+    type NodeProps,
+  } from "@xyflow/svelte";
 
   type $$Props = NodeProps;
 
-  export let id: $$Props['id'];
+  export let id: $$Props["id"];
 
   const connections = useHandleConnections({
     nodeId: id,
-    type: 'target'
+    type: "target",
   });
 
-  $: nodesData = useNodesData($connections.map((connection) => connection.source));
+  $: nodesData = useNodesData(
+    $connections.map((connection) => connection.source),
+  );
 </script>
 
 <div class="custom">
