@@ -12,6 +12,8 @@
   export let id: $$Props["id"];
   export let data: $$Props["data"];
 
+  data.text = "testing for uppercase";
+
   const { updateNodeData } = useSvelteFlow();
 
   const handles = [];

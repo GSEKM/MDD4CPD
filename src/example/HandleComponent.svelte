@@ -25,6 +25,7 @@
         id={handleInfo.id}
         position={handleInfo.position}
         isConnectable={true}
+        type="source"
         style={`position: "absolute" ; top: ${offset}px`}
     />
 </div>
