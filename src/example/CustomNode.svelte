@@ -1,17 +1,32 @@
 <script lang="ts">
   import {
-    Handle,
     Position,
     type NodeProps,
     useSvelteFlow,
+    Handle,
   } from "@xyflow/svelte";
 
+  import HandleComponent from "./HandleComponent.svelte";
   type $$Props = NodeProps;
 
   export let id: $$Props["id"];
   export let data: $$Props["data"];
 
   const { updateNodeData } = useSvelteFlow();
+
+  const handles = [];
+  let leftQuantity = 0;
+  let rightQuantity = 0;
+
+  // @ts-ignore
+  data.outs.forEach((item) =>
+    handles.push({
+      edge: item,
+      index: leftQuantity++,
+      id: `out-${leftQuantity}`,
+      position: Position.Left,
+    }),
+  );
 </script>
 
 <div class="custom">
@@ -23,6 +38,10 @@
     />
   </div>
   <Handle type="source" position={Position.Right} />
+
+  {#each handles as handle (handle.id)}
+    <HandleComponent handleInfo={handle} />
+  {/each}
 </div>
 
 <style>
