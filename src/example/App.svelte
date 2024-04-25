@@ -16,6 +16,11 @@
   import UppercaseNode from "./UppercaseNode.svelte";
   import ResultNode from "./ResultNode.svelte";
 
+  import Sidebar from "./Sidebar.svelte";
+  import paletteNodes from "../nodes.json";
+
+  console.log("paletteNodes", paletteNodes);
+
   const nodeTypes: NodeTypes = {
     text: TextNode,
     uppercase: UppercaseNode,
@@ -77,6 +82,7 @@
   <SvelteFlow {nodes} {edges} {nodeTypes} fitView>
     <Controls />
     <Background variant={BackgroundVariant.Dots} />
+    <Sidebar nodes={paletteNodes} />
     <MiniMap />
   </SvelteFlow>
 </main>
