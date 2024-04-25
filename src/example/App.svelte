@@ -82,9 +82,9 @@
   <SvelteFlow {nodes} {edges} {nodeTypes} fitView>
     <Controls />
     <Background variant={BackgroundVariant.Dots} />
-    <Sidebar nodes={paletteNodes} />
     <MiniMap />
   </SvelteFlow>
+  <Sidebar nodes={paletteNodes} />
 </main>
 
 <style>
