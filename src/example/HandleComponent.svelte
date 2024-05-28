@@ -1,11 +1,12 @@
 <script lang="ts">
     import { Position, Handle } from "@xyflow/svelte";
-
-    export let handleInfo: $$Props["handleInfo"];
-
+     
+    export let handleInfo: Handle["handleInfo"];
+   
     console.log("hi", handleInfo);
+    
 
-    const offset = 50 + handleInfo.index * 50;
+    const offset = 45 + handleInfo.index * 30 ;
 </script>
 
 <div id={handleInfo.id}>
@@ -26,6 +27,6 @@
         position={handleInfo.position}
         isConnectable={true}
         type="source"
-        style={`position: "absolute" ; top: ${offset}px`}
+        style={` top: ${offset}px;`}
     />
 </div>
