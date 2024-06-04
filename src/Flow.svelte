@@ -1,6 +1,6 @@
 <script lang="ts">
     import "@xyflow/svelte/dist/style.css";
-    import { writable } from "svelte/store";
+    import {writable} from "svelte/store";
     import {
         SvelteFlow,
         Controls,
@@ -9,29 +9,26 @@
         MiniMap,
         useSvelteFlow,
         type Edge,
-        type EdgeTypes,
         type Node,
         type NodeTypes,
     } from "@xyflow/svelte";
-    import Sidebar from "../src/example/Sidebar.svelte";
+    import Sidebar from "./components/sidebar/Sidebar.svelte";
     import paletteNodes from "../src/nodes.json";
 
-    import ModalNode from "./example/ModalNode.svelte";
-    import CustomNode from "./example/CustomNode.svelte";
-    import ResultNode from "./example/ResultNode.svelte";
-    import CustomEdge from "./example/CustomEdge.svelte";
+    import ModalNode from "./components/nodes/ModalNode.svelte";
+    import CustomNode from "./components/nodes/CustomNode.svelte";
+    import ResultNode from "./components/nodes/ResultNode.svelte";
 
-    import { initialNodes, initialEdges } from './example/edges_and_nodes';
 
-    // Define edge and node types
-        const edgeTypes: EdgeTypes = {
-        customEdge: CustomEdge,
-    };
+    import { initialNodes, initialEdges } from './components/edges_and_nodes';
+
+
+
+   
     
-    const { getEdges } = useSvelteFlow();
-    const allEdges = getEdges([]);
-
-    console.log(allEdges)
+    // Initialize SvelteFlow hook
+    const { screenToFlowPosition, getEdges , getNodes} = useSvelteFlow();
+    const allEdges = getEdges();
     const nodes = writable<Node[]>(initialNodes);
     const edges = writable<Edge[]>(initialEdges.map(edge => ({ ...edge, type: 'customEdge' })));
     
@@ -42,8 +39,7 @@
         result: ResultNode,
     };
 
-    // Initialize SvelteFlow hook
-    const { screenToFlowPosition } = useSvelteFlow();
+    
 
     // Drag and drop handlers
     const onDragOver = (event: DragEvent) => {
@@ -54,7 +50,6 @@
     };
 
     const onDrop = (event: DragEvent) => {
-        event.preventDefault();
         if (!event.dataTransfer) {
             return;
         }
@@ -68,7 +63,6 @@
         const newNode: Node = {
             id: `${Math.random()}`,
             type: "custom",
-            
             position,
             origin: [0.5, 0.0],
             data: JSON.parse(data),
@@ -77,21 +71,72 @@
 
         nodes.update(n => [...n, newNode]);
     };
-
+    let modalNodeId = 1;
     // Edge click handler
-    const onEdgeClick = (event: CustomEvent<{ edge: Edge, event: MouseEvent | TouchEvent }>) => {
+    const onEdgeClick = (event: CustomEvent<{edge: Edge, event: MouseEvent | TouchEvent }>) => {
         const edge = event.detail.edge;
+        
+        const nodesAux = getNodes();
+        
+        const sourceNode = nodesAux.find(node => node.id === edge.source);
+        const targetNode = nodesAux.find(node => node.id === edge.target);
+    
+        // Find the handle that matches the edge
+        const handle = sourceNode.data.handles.find(h => h.id === edge.sourceHandle);
+        
 
+        function defineHandleEnd(){
+            if (targetNode.data.handles === undefined){
+                return;
+            } 
+            else{
+                const handleEnd = targetNode.data.handles.find(h => h.id === edge.targetHandle);
+                return handleEnd
+            }
+        }
+        const handleEnd = defineHandleEnd();
+        
+        const method = handle ? handle.edge : "";
+
+        const methodEnd = handleEnd ? handleEnd.edge: "";
+     
+  
+        
+        // Create the new modal node
+        
         const newNode: Node = {
-            id: `${Math.random()}`,
+            id: `${modalNodeId++}`,
             type: "modal",
             data: {
-                text: "Insira o conteudo da string",
+                text: sourceNode.data.text,
+                methods: [method], // Pass the specific method
+                methodsEnd: [methodEnd]
             },
-            position: { x: 0, y: 0 },
+            position: { x: (sourceNode.position.x + targetNode.position.x) / 2, y: (sourceNode.position.y + targetNode.position.y) / 2 },
         };
-
+        console.log("id do modal node "+ newNode.id)
         nodes.update(n => [...n, newNode]);
+        
+        // Remove the original edge
+        edges.update(e => e.filter(edgeItem => edgeItem.id !== edge.id));
+
+        // Create new edges
+        const newEdges: Edge[] = [
+            {
+                id: `edge-${Math.random()}`,
+                source: edge.source,
+                target: newNode.id,
+                sourceHandle: edge.sourceHandle,
+            },
+            {
+                id: `edge-${Math.random()}`,
+                source: newNode.id,
+                target: edge.target,
+                targetHandle: edge.targetHandle,
+            }
+        ];
+
+        edges.update(e => [...e, ...newEdges]);
     };
 </script>
 
@@ -100,7 +145,6 @@
         {nodes}
         {edges}
         {nodeTypes}
-        {edgeTypes}
         fitView
         on:dragover={onDragOver}
         on:drop={onDrop}

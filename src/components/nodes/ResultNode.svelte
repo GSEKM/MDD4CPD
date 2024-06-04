@@ -23,13 +23,13 @@
 
 <div class="custom">
   <Handle type="target" position={Position.Left} />
-  <div class="label">incoming texts:</div>
+  <div class="label">Generated Arduino Code:</div>
 
-  {#if $nodesData.length === 0}
-    <div>no connected nodes</div>
+  {#if $nodesData === undefined || $nodesData.length === 0}
+    <div>No connected nodes</div>
   {:else}
     {#each $nodesData as nodeData}
-      <div>{nodeData.data.text}</div>
+      <div><pre>{nodeData.data.generatedCode}</pre></div>
     {/each}
   {/if}
 </div>
@@ -44,5 +44,13 @@
 
   .label {
     margin-bottom: 5px;
+  }
+
+  pre {
+    background-color: #f8f8f8;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    white-space: pre-wrap;
   }
 </style>

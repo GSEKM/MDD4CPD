@@ -1,9 +1,9 @@
 
-// type Method = {
-//     name: string;
-//     params: Param[];
-//     returns: Param;
-// }
+type Method = {
+    name: string;
+    params: Param[];
+    returns: Param;
+}
 
 export type NodeData = {
     name: string;
