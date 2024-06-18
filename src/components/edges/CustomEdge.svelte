@@ -32,12 +32,4 @@
   </EdgeLabelRenderer>
   
   <style>
-    .edge-label {
-        position: absolute;
-        background: #ffcc00;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        font-weight: 700;
-    }
   </style>
