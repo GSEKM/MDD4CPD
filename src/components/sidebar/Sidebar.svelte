@@ -18,6 +18,8 @@
     {#each nodes as node}
       <div
         class="output-node node"
+        role="button"
+        tabindex="0"
         draggable={true}
         on:dragstart={(event) => onDragStart(event, node)}
         title={node.extras.description}

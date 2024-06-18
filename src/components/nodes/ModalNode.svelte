@@ -6,12 +6,14 @@
     useSvelteFlow,
   } from "@xyflow/svelte";
   import { writable } from 'svelte/store';
-
+  
+  //Defining the props 
   type $$Props = NodeProps;
 
   export let id: $$Props["id"];
   export let data: $$Props["data"];
 
+  //instantiating the svelteFlow store
   const { updateNodeData } = useSvelteFlow();
 
   const int_numbers = [
@@ -30,7 +32,8 @@
   let inputText = data.text || '';
   let methods = data.methods || '';
   let methodsEnd = data.methodsEnd || [];
-  
+  // procurar por === nome do metodo para passar paramentros para o metodo
+  //Getting methods from target node
   const targetMethods = [
     { value: methodsEnd }
   ];
@@ -68,7 +71,7 @@
         code += `  float meuFloat = ${selectedFloatOption}\n`;
       }
       if (inputText) {
-        code += `  String minhaString = "${inputText}\n"`;
+        code += `  String minhaString = ${inputText}\n`;
       }
       if (selectedMethodOption) {
         code += `  ${selectedMethodOption}\n`;
@@ -92,6 +95,7 @@
     });
   }
 </script>
+
 
 <div class="custom">
   <div class="label">Modal Node</div>
