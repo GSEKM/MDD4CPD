@@ -19,14 +19,12 @@
     import ResultNode from "./components/nodes/ResultNode.svelte";
     import { initialNodes, initialEdges } from "./components/edges_and_nodes";
     import NodeModal from "./components/nodes/NodeModal.svelte";
+    import CustomEdge from "./components/edges/CustomEdge.svelte";
 
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getEdges, getNodes } = useSvelteFlow();
-    const allEdges = getEdges();
     const nodes = writable<Node[]>(initialNodes);
-    const edges = writable<Edge[]>(
-        initialEdges.map((edge) => ({ ...edge, type: "customEdge" })),
-    );
+    const edges = writable<Edge[]>(initialEdges);
 
     // Specify node types
     const nodeTypes: NodeTypes = {
@@ -35,6 +33,19 @@
         custom: CustomNode,
         result: ResultNode,
     };
+
+    const edgeTypes = {
+        customEdge: CustomEdge,
+    };
+
+    // Listen for edge updates and ensure all have type "customEdge"
+    edges.subscribe((updatedEdges) => {
+        updatedEdges.forEach((edge) => {
+            if (edge.type !== "customEdge") {
+                edges.update((e) => e.map((e) => (e.id === edge.id ? { ...e, type: "customEdge" } : e)));
+            }
+        });
+    });
 
     // Drag and drop handlers
     const onDragOver = (event: DragEvent) => {
@@ -169,6 +180,7 @@
         {nodes}
         {edges}
         {nodeTypes}
+        {edgeTypes}
         fitView
         on:dragover={onDragOver}
         on:drop={onDrop}

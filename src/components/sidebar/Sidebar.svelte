@@ -13,7 +13,7 @@
 </script>
 
 <aside>
-  <div class="mb-0">Arraste os componentes para a esquerda</div>
+  <div class="mb-0"></div>
   <div class="flexbox items-center justify-center">
     {#each nodes as node}
       <div
@@ -43,12 +43,13 @@
 
   .node {
     margin: 0.5rem;
-    border: 1px solid #111;
+    border: 2px  solid #111;
+    border-radius: 10px;
     padding: 0.5rem 1rem;
     font-weight: 700;
     border-radius: 3px;
     cursor: grab;
-    width: 100%;
+    width: 95%;
     text-align: center;
   }
 </style>
