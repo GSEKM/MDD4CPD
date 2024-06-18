@@ -9,7 +9,7 @@
       edge: string;
       index: number;
     };
-    console.log("handle info: "+handleInfo.id )
+    console.log("handle info: "+handleInfo.edge )
     const offset = 45 + handleInfo.index * 30;
   </script>
   
@@ -22,7 +22,7 @@
       position={handleInfo.position}
       isConnectable={handleInfo.isConnectable}
       type={handleInfo.type}
-      style={`top: ${offset}px;`}
+      style={`top: ${offset}px;`} 
     />
   </div>
   
