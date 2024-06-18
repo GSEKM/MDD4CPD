@@ -166,8 +166,8 @@
                 methods: sourceNode.data.handles.map((h) => h.edge),
             },
             position: {
-                x: sourceNode.position.x + 50,
-                y: sourceNode.position.y + 50,
+                x: sourceNode.position.x-130,
+                y: sourceNode.position.y -290,
             },
         };
 
@@ -189,7 +189,7 @@
     >
         <Controls />
         <Background variant={BackgroundVariant.Dots} />
-        <MiniMap />
+        <MiniMap pannable zoomable/>
     </SvelteFlow>
     <Sidebar nodes={paletteNodes} />
 </main>
