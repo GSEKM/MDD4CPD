@@ -14,7 +14,7 @@
   export let data: $$Props["data"];
 
   //instantiating the svelteFlow store
-  const { updateNodeData } = useSvelteFlow();
+  const { updateNodeData,deleteElements } = useSvelteFlow();
 
   const int_numbers = [
     { value: '1', label: '1' },
@@ -94,10 +94,17 @@
       generatedCode: code
     });
   }
+
+  function handleMinimize() {
+    deleteElements({ nodes: [{ id }] });
+  }
 </script>
 
 
 <div class="custom">
+  <button class="close-button" on:click={handleMinimize}>
+    -
+  </button>
   <div class="label">Modal Node</div>
   <div class="label">
     Criar parametro inteiro:
@@ -146,6 +153,8 @@
     background-color: #eee;
     padding: 10px;
     border-radius: 10px;
+    display: flex;
+    flex-direction: column;
   }
 
   .label {
@@ -160,5 +169,28 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     white-space: pre-wrap;
+  }
+  .close-button {
+    width: 10px;
+    height: 10px;
+    background-color: grey; 
+    border-radius: 50%; 
+    color: white; 
+    font-size: 20px;
+    cursor: pointer; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+    transition: background-color 0.3s; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-self: flex-end;
+  }
+
+  .close-button:hover {
+    background-color: #a19d9d; 
+  }
+
+  .close-button:focus {
+    outline: none; 
   }
 </style>
