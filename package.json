@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "gsekm.github.io",
+  "homepage": "gsekm.github.io/MMDD4CPD/src/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
