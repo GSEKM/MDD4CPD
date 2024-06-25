@@ -22,7 +22,7 @@
     import CustomEdge from "./components/edges/CustomEdge.svelte";
 
     // Initialize SvelteFlow hook
-    const { screenToFlowPosition, getEdges, getNodes } = useSvelteFlow();
+    const { screenToFlowPosition,  getNodes } = useSvelteFlow();
     const nodes = writable<Node[]>(initialNodes);
     const edges = writable<Edge[]>(initialEdges);
 
@@ -42,7 +42,8 @@
     edges.subscribe((updatedEdges) => {
         updatedEdges.forEach((edge) => {
             if (edge.type !== "customEdge") {
-                edges.update((e) => e.map((e) => (e.id === edge.id ? { ...e, type: "customEdge" } : e)));
+                console.log(edge.sourceHandle, edge.targetHandle)
+                edges.update((e) => e.map((e) => (e.id === edge.id ? { ...e, type: "customEdge"} : e)));
             }
         });
     });
@@ -181,7 +182,6 @@
         {edges}
         {nodeTypes}
         {edgeTypes}
-        fitView
         on:dragover={onDragOver}
         on:drop={onDrop}
         on:edgeclick={onEdgeClick}
