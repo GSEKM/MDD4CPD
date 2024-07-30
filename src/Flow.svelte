@@ -11,6 +11,7 @@
         type Edge,
         type Node,
         type NodeTypes,
+
     } from "@xyflow/svelte";
     import Sidebar from "./components/sidebar/Sidebar.svelte";
     import paletteNodes from "../src/nodes.json";
@@ -22,7 +23,7 @@
     import CustomEdge from "./components/edges/CustomEdge.svelte";
 
     // Initialize SvelteFlow hook
-    const { screenToFlowPosition,  getNodes } = useSvelteFlow();
+    const { screenToFlowPosition,  getNodes, updateNode} = useSvelteFlow();
     const nodes = writable<Node[]>(initialNodes);
     const edges = writable<Edge[]>(initialEdges);
 
@@ -37,16 +38,6 @@
     const edgeTypes = {
         customEdge: CustomEdge,
     };
-
-    // Listen for edge updates and ensure all have type "customEdge"
-    edges.subscribe((updatedEdges) => {
-        updatedEdges.forEach((edge) => {
-            if (edge.type !== "customEdge") {
-                console.log(edge.sourceHandle, edge.targetHandle)
-                edges.update((e) => e.map((e) => (e.id === edge.id ? { ...e, type: "customEdge"} : e)));
-            }
-        });
-    });
 
     // Drag and drop handlers
     const onDragOver = (event: DragEvent) => {
@@ -149,6 +140,8 @@
         ];
 
         edges.update((e) => [...e, ...newEdges]);
+        // Update the source node position to the exact same place
+        updateNode(edge.source, { position: sourceNode.position });
     };
 
     // Node click handler
@@ -182,6 +175,7 @@
         {edges}
         {nodeTypes}
         {edgeTypes}
+        defaultEdgeOptions={{ type: 'customEdge' }} 
         on:dragover={onDragOver}
         on:drop={onDrop}
         on:edgeclick={onEdgeClick}

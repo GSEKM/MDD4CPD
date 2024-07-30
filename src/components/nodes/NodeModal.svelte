@@ -3,6 +3,7 @@
   import { writable, get } from "svelte/store";
   import { updateGlobalCode, globalCode } from "../code/store";
 
+  const { getNodes } = useSvelteFlow();
 
   // Definindo os props
   type $$Props = NodeProps;
@@ -30,30 +31,38 @@
   let declarationLocation = data.declarationLocation || "";
   let typeOfDeclaration = data.typeOfDeclaration || "variables";
 
+  let selectedRetunType = data.selectedRetunType || "";
+  let inputMethodName = data.inputMethodName || "";
+  let methodDeclarationLocation = data.methodDeclarationLocation || "";
+
   let aux_cod = get(globalCode); //variavel auxiliar para armazenar o código global
 
   const arduinoCode = writable(generateArduinoCode(aux_cod));
-  
-  const targetMethods = [
-    { value: methods}
-  ];
-  console.log(targetMethods)
+
+  const targetMethods = [{ value: methods }];
+
   const handleParameterTypeSelect = (event) => {
     selectedType = event.target.value;
-    updateNodeDataAndCode();
   };
   const handleParameterName = (event) => {
     inputParameterName = event.target.value;
-    updateNodeDataAndCode();
   };
   const handleDeclarationLocation = (event) => {
     declarationLocation = event.target.value;
-    updateNodeDataAndCode();
   };
 
   const handleParameterContent = (event) => {
     inputParameterContent = event.target.value;
-    updateNodeDataAndCode();
+  };
+
+  const handleMethodName = (event) => {
+    inputMethodName = event.target.value;
+  };
+  const handleSelectReturnType = (event) => {
+    selectedRetunType = event.target.value;
+  };
+  const handleMehtodDeclarationLocation = (event) => {
+    methodDeclarationLocation = event.target.value;
   };
 
   // Função para verificar se o método já existe no código global
@@ -62,11 +71,28 @@
     return regex.test(code);
   }
 
-  // Função para gerar variáveis do Arduino
-  function generateArduinoVariables() {
+  // Função para gerar variáveis e metodos do Arduino
+  function generateArduinoPreCode() {
     let codev = "";
-    if (declarationLocation == "global") {
-      codev += `${selectedType} ${inputParameterName} = ${inputParameterContent};\n`;
+    if (typeOfDeclaration == "variables") {
+      if (declarationLocation == "global") {
+        codev += `${selectedType} ${inputParameterName} = ${inputParameterContent};\n`;
+      } else {
+        codev += `${selectedType} ${inputParameterName} = ${inputParameterContent};\n`;
+      }
+    }
+    if (typeOfDeclaration == "methods") {
+      console.log(
+        selectedRetunType,
+        inputMethodName,
+        methodDeclarationLocation,
+      );
+      if (methodDeclarationLocation == "global") {
+        codev += `${selectedRetunType} ${inputMethodName}();\n\n`;
+      }
+      if (methodDeclarationLocation != "global") {
+        codev += `${selectedRetunType} ${inputMethodName}();\n\n`;
+      }
     }
     return codev;
   }
@@ -77,7 +103,8 @@
     if (Array.isArray(methods)) {
       methods.forEach((method) => {
         if (!methodExists(method, code)) {
-          code += `${method} {\n ${declarationLocation == method ? `${selectedType} ${inputParameterName} = ${inputParameterContent} ;\n` : ''}`;
+          console.log(method);
+          code += `${method} {\n ${declarationLocation == method ? `${selectedType} ${inputParameterName} = ${inputParameterContent} ;\n` : ""}`;
           code += `}\n`;
         }
       });
@@ -87,14 +114,16 @@
 
   // Função para atualizar dados e código do node
   function updateNodeDataAndCode() {
-    const code_variables = generateArduinoVariables();
-    const newCode = generateArduinoCode(code_variables);
+    const precode = generateArduinoPreCode();
+    const newCode = generateArduinoCode(precode);
     updateGlobalCode(newCode);
     arduinoCode.set(newCode);
     updateNodeData(id, {
       selectedType,
       inputParameterName,
       declarationLocation,
+      inputMethodName,
+      selectedRetunType,
       text: inputText,
       methods,
       generatedCode: newCode,
@@ -106,17 +135,41 @@
     deleteElements({ nodes: [{ id }] });
   }
 
+  function variablesMode() {
+    typeOfDeclaration = "variables";
+  }
 
+  function methodsMode() {
+    typeOfDeclaration = "methods";
+  }
 
-  function handleTypeOfDeclaration() {
-    typeOfDeclaration = typeOfDeclaration === "variables" ? "methods" : "variables";
+  function updateButton() {
+    console.log(typeOfDeclaration);
+    updateNodeDataAndCode();
+  }
+
+  function addButton() {
+    const nodes = getNodes();
+    const newNodeId = `node-${Date.now()}`;
+    const newNode = {
+      id: newNodeId,
+      data: { label: "New Node" },
+      position: { x: 250, y: 0 },
+      type: "default",
+    };
+    nodes.push(newNode);
   }
 </script>
 
 {#if typeOfDeclaration === "variables"}
   <div class="custom">
     <button class="close-button" on:click={handleMinimize}> - </button>
-    <button class="declaration-button" on:click={handleTypeOfDeclaration}>{typeOfDeclaration}</button>
+    <div class="declaration-buttons-container">
+      <button class="declaration-button" on:click={variablesMode}
+        >Variables</button
+      >
+      <button class="declaration-button" on:click={methodsMode}>Methods</button>
+    </div>
 
     <div class="label">
       Nome do parametro:
@@ -147,11 +200,14 @@
 
     <div class="label">
       Local de declaração:
-      <select bind:value={declarationLocation} on:change={handleDeclarationLocation}>
+      <select
+        bind:value={declarationLocation}
+        on:change={handleDeclarationLocation}
+      >
         {#each targetMethods as method}
           <option value="global">global</option>
           {#each method.value as value}
-            <option value={value}>{value}</option>
+            <option {value}>{value}</option>
           {/each}
         {/each}
       </select>
@@ -161,44 +217,58 @@
 {#if typeOfDeclaration === "methods"}
   <div class="custom">
     <button class="close-button" on:click={handleMinimize}> - </button>
-    <button class="declaration-button" on:click={handleTypeOfDeclaration}>{typeOfDeclaration}</button>
-   
+    <div class="declaration-buttons-container">
+      <button class="declaration-button" on:click={variablesMode}
+        >Variables</button
+      >
+      <button class="declaration-button" on:click={methodsMode}>Methods</button>
+    </div>
+
     <div class="label">
       Nome do metodo:
       <input
-        bind:value={inputParameterName}
-        on:input={handleParameterName}
-        placeholder="Nome do parametro"
+        bind:value={inputMethodName}
+        on:input={handleMethodName}
+        placeholder="Nome do metodo"
       />
     </div>
 
     <div class="label">
       Local de declaração:
-      <select bind:value={declarationLocation} on:change={handleDeclarationLocation}>
+      <select
+        bind:value={methodDeclarationLocation}
+        on:change={handleMehtodDeclarationLocation}
+      >
         {#each targetMethods as method}
           <option value="global">global</option>
           {#each method.value as value}
-            <option value={value}>{value}</option>
+            <option {value}>{value}</option>
           {/each}
         {/each}
       </select>
     </div>
 
     <div class="label">
-      retorno:
-      <select bind:value={selectedType} on:change={handleParameterTypeSelect}>
+      Tipo de Retorno:
+      <select bind:value={selectedRetunType} on:change={handleSelectReturnType}>
         {#each int_numbers as option}
           <option value={option.value}>{option.label}</option>
         {/each}
       </select>
     </div>
-
-
+    <div class="label">
+      Adicionar parametros <button class="add-button" on:click={addButton}>
+        +
+      </button>
+    </div>
   </div>
 {/if}
 
 <div class="output">
   <pre>{$arduinoCode}</pre>
+  <div class="update-button">
+    <button class="save-button" on:click={updateButton}>Salvar</button>
+  </div>
 </div>
 
 <style>
@@ -213,6 +283,9 @@
   }
 
   .label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 12px;
     margin-bottom: 5px;
   }
@@ -273,5 +346,44 @@
 
   .declaration-button:focus {
     outline: none;
+  }
+
+  .declaration-buttons-container {
+    display: flex;
+    justify-content: space-evenly;
+  }
+
+  .update-button {
+    display: flex;
+    justify-content: center;
+  }
+
+  .save-button {
+    width: 80px;
+    height: 25px;
+    background-color: rgb(96, 94, 245);
+    border-radius: 20px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .add-button {
+    width: 20px;
+    height: 20px;
+    background-color: grey;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 </style>

@@ -1,11 +1,15 @@
 <script lang="ts">
-  import {  Position, type NodeProps, useSvelteFlow, type Node } from "@xyflow/svelte";
+  import {
+    Position,
+    type NodeProps,
+    useSvelteFlow,
+    type Node,
+  } from "@xyflow/svelte";
   import HandleComponent from "../handles/HandleComponent.svelte";
   type $$Props = NodeProps;
   export let id: $$Props["id"];
   export let data: $$Props["data"];
-
-
+  
   interface Extras {
     value?: string;
     group?: string;
@@ -33,7 +37,7 @@
 
   const typedData = data as Data;
 
-  const {updateNodeData} = useSvelteFlow();
+  const { updateNodeData } = useSvelteFlow();
 
   interface Handle {
     id: string;
@@ -108,25 +112,34 @@
   });
 
   function handleClose() {
+    
   }
 </script>
 
 <div class="custom" style={`border-color: ${typedData.color};`}>
-  <button class="close-button" on:click={handleClose}>
-    <i class="fas fa-cog"></i>
-  </button>
-  <div class="label">{typedData.name}</div>
+
+  <div class= "inner_custom" style={`display: flex; flex-direction: column; align-items: center; justify-content: center;`}>
+    <div class="label">{typedData.name}</div>
+
+    <button class="close-button" on:click={handleClose} style={`margin-bottom: 5px`}>
+      <i class="fas fa-cog"></i>
+    </button>
+  </div>
+
   {#each handles as handle (handle.id)}
-    <HandleComponent handleInfo={handle} />
+    <div class="handle_position"><HandleComponent handleInfo={handle} /></div>
   {/each}
+
 </div>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+/>
 
 <style>
   .custom {
     background-color: #eee;
-    padding: 10px;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -136,31 +149,32 @@
   }
 
   .label {
-    font-size: 12px;
+    font-size: 15px;
     margin-bottom: 5px;
-    margin-top: 2px;
+    font-weight: bold;
+    margin: 10px 10px 0px 10px; 
   }
 
   .close-button {
     width: 12px;
     height: 12px;
-    background-color: grey; 
-    border-radius: 50%; 
-    color: white; 
+    background-color: grey;
+    border-radius: 50%;
+    color: white;
     font-size: 8px;
-    cursor: pointer; 
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
-    transition: background-color 0.3s; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
     display: flex;
     justify-content: center;
     align-items: center;
   }
 
   .close-button:hover {
-    background-color: #a19d9d; 
+    background-color: #a19d9d;
   }
 
   .close-button:focus {
-    outline: none; 
+    outline: none;
   }
 </style>

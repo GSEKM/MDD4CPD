@@ -14,7 +14,7 @@
   export let data: $$Props["data"];
 
   //instantiating the svelteFlow store
-  const { updateNodeData,deleteElements } = useSvelteFlow();
+  const { updateNodeData,deleteElements} = useSvelteFlow();
 
   const int_numbers = [
     { value: '1', label: '1' },
