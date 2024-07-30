@@ -9,7 +9,7 @@
   type $$Props = NodeProps;
   export let id: $$Props["id"];
   export let data: $$Props["data"];
-  
+
   interface Extras {
     value?: string;
     group?: string;
@@ -112,16 +112,22 @@
   });
 
   function handleClose() {
-    
+    console.log("test");
   }
 </script>
 
 <div class="custom" style={`border-color: ${typedData.color};`}>
-
-  <div class= "inner_custom" style={`display: flex; flex-direction: column; align-items: center; justify-content: center;`}>
+  <div
+    class="inner_custom"
+    style={`display: flex; flex-direction: column; align-items: center; justify-content: center;`}
+  >
     <div class="label">{typedData.name}</div>
 
-    <button class="close-button" on:click={handleClose} style={`margin-bottom: 5px`}>
+    <button
+      class="close-button"
+      on:click={handleClose}
+      style={`margin-bottom: 5px`}
+    >
       <i class="fas fa-cog"></i>
     </button>
   </div>
@@ -129,7 +135,6 @@
   {#each handles as handle (handle.id)}
     <div class="handle_position"><HandleComponent handleInfo={handle} /></div>
   {/each}
-
 </div>
 
 <link
@@ -152,7 +157,7 @@
     font-size: 15px;
     margin-bottom: 5px;
     font-weight: bold;
-    margin: 10px 10px 0px 10px; 
+    margin: 10px 10px 0px 10px;
   }
 
   .close-button {

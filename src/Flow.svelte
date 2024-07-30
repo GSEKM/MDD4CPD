@@ -11,7 +11,6 @@
         type Edge,
         type Node,
         type NodeTypes,
-
     } from "@xyflow/svelte";
     import Sidebar from "./components/sidebar/Sidebar.svelte";
     import paletteNodes from "../src/nodes.json";
@@ -23,7 +22,8 @@
     import CustomEdge from "./components/edges/CustomEdge.svelte";
 
     // Initialize SvelteFlow hook
-    const { screenToFlowPosition,  getNodes, updateNode} = useSvelteFlow();
+    const { screenToFlowPosition, getNodes, updateNode, toObject } =
+        useSvelteFlow();
     const nodes = writable<Node[]>(initialNodes);
     const edges = writable<Edge[]>(initialEdges);
 
@@ -145,23 +145,43 @@
     };
 
     // Node click handler
-    export const createNodeModal = (event: CustomEvent<{ node: Node}>) => {
+    export const createNodeModal = (event: CustomEvent<{ node: Node }>) => {
         const nodeId = event.detail.node.id;
         const nodesAux: Node[] = getNodes();
         const sourceNode = nodesAux.find((node) => node.id === nodeId);
         if (sourceNode.type === "config" || sourceNode.type === "modal") return;
         if (!sourceNode) return;
 
+        console.log(
+            "creating from",
+            sourceNode,
+            sourceNode.data.extras?.inputParameterName,
+        );
+
+        /*
+ if zoom < 100
+        mode= max
+if zoom < 200
+        mode= mid
+if zoom < 300
+        mode= min
+*/
+
         const newNode: Node = {
             id: `${modalNodeId++}`,
             type: "config",
             data: {
-                text: "",
+                //@ts-ignore
+                inputParameterName:
+                    sourceNode.data.extras?.inputParameterName || "",
                 methods: sourceNode.data.handles.map((h) => h.edge),
+                source: sourceNode.id,
+                // extra: {
+                // },
             },
             position: {
-                x: sourceNode.position.x-130,
-                y: sourceNode.position.y -290,
+                x: sourceNode.position.x - 130,
+                y: sourceNode.position.y - 290,
             },
         };
 
@@ -170,12 +190,18 @@
 </script>
 
 <main>
+    <button
+        class="save-button"
+        on:click={() => {
+            console.log("representation", toObject());
+        }}>Salvar</button
+    >
     <SvelteFlow
         {nodes}
         {edges}
         {nodeTypes}
         {edgeTypes}
-        defaultEdgeOptions={{ type: 'customEdge' }} 
+        defaultEdgeOptions={{ type: "customEdge" }}
         on:dragover={onDragOver}
         on:drop={onDrop}
         on:edgeclick={onEdgeClick}
@@ -183,7 +209,8 @@
     >
         <Controls />
         <Background variant={BackgroundVariant.Dots} />
-        <MiniMap pannable zoomable/>
+
+        <MiniMap pannable zoomable />
     </SvelteFlow>
     <Sidebar nodes={paletteNodes} />
 </main>

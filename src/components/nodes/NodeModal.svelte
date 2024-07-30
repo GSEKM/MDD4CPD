@@ -10,6 +10,11 @@
 
   export let id: $$Props["id"];
   export let data: $$Props["data"];
+  console.log("data", data);
+  const nodes = getNodes();
+  const modalNode = nodes.find((n) => n.id === id);
+
+  const sourceNode = nodes.find((n) => n.id === modalNode.data.source);
 
   // Instanciando a svelteFlow store
   const { updateNodeData, deleteElements } = useSvelteFlow();
@@ -118,6 +123,11 @@
     const newCode = generateArduinoCode(precode);
     updateGlobalCode(newCode);
     arduinoCode.set(newCode);
+
+    //@ts-ignore
+    sourceNode.data.extras.inputParameterName = inputParameterName;
+    updateNodeData(sourceNode.id, sourceNode.data);
+    console.log("inputparam", inputParameterName);
     updateNodeData(id, {
       selectedType,
       inputParameterName,
@@ -144,6 +154,9 @@
   }
 
   function updateButton() {
+    //acessar o id do source
+    //update(id, data)
+
     console.log(typeOfDeclaration);
     updateNodeDataAndCode();
   }
