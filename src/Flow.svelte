@@ -20,12 +20,11 @@
     import NodeModal from "./components/nodes/NodeModal.svelte";
     import CustomEdge from "./components/edges/CustomEdge.svelte";
 
-    import {edges, nodes} from "./components/code/store";
+    import { edges, nodes } from "./components/code/store";
 
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
-    useSvelteFlow();
-
+        useSvelteFlow();
 
     // Specify node types
     const nodeTypes: NodeTypes = {
@@ -79,17 +78,16 @@
 
         const nodesAux: Node[] = getNodes();
 
-        const sourceNode = nodesAux.find((node) => node.id === edge.source) ;
+        const sourceNode = nodesAux.find((node) => node.id === edge.source);
         const targetNode = nodesAux.find((node) => node.id === edge.target);
-
-        console.log('sourceNode.handles', sourceNode.data.handles)
-        console.log('edge',edge)
 
         // Find the handle that matches the edge
         const handle = sourceNode?.data?.handles.find(
             (h) => h.id === edge.sourceHandle,
         );
-
+        console.log("sourceNode.handles", sourceNode.data.handles);
+        console.log("handle", handle);
+        console.log("edge", edge);
         function defineHandleEnd() {
             if (targetNode.data.handles === undefined) {
                 return;
@@ -109,16 +107,17 @@
         // Create the new modal node
 
         const newData = {
-                text: sourceNode.data.text,
-                methods: [method], // Pass the specific method
-                methodsEnd: [methodEnd],}
+            text: sourceNode.data.text,
+            methods: [method], // Pass the specific method
+            methodsEnd: [methodEnd],
+        };
 
-        console.log('Criando newNode', newData)
-        
+        console.log("Criando newNode", newData);
+
         const newNode: Node = {
             id: `${modalNodeId++}`,
             type: "modal",
-            data:newData,
+            data: newData,
             position: {
                 x: (sourceNode.position.x + targetNode.position.x) / 2,
                 y: (sourceNode.position.y + targetNode.position.y) / 2,

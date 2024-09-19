@@ -7,7 +7,7 @@
     type Edge,
   } from "@xyflow/svelte";
   import { writable } from "svelte/store";
-  import { edges } from '../code/store';
+  import { edges } from "../code/store";
 
   //Defining the props
   type $$Props = NodeProps;
@@ -18,7 +18,6 @@
   //instantiating the svelteFlow store
   const { updateNodeData, deleteElements, getEdges } = useSvelteFlow();
 
-
   let selectedMethodOption = data.selectedMethodOption || "";
 
   let methods = data.methods || "";
@@ -26,19 +25,19 @@
 
   // procurar por === nome do metodo para passar paramentros para o metodo
   //Getting methods from target node
-  
+
   const targetMethods = [{ value: methodsEnd }];
 
   const arduinoCode = writable(generateArduinoCode());
 
   const handleSelectMethod = (event) => {
-    console.log("handleSelectMethod")
+    console.log("handleSelectMethod");
     selectedMethodOption = event.target.value;
     updateNodeDataAndCode();
   };
 
   function generateArduinoCode() {
-    console.log("generateArduinoCode")
+    console.log("generateArduinoCode");
     let code = "";
     if (methods) {
       code += `${methods}{\n`;
@@ -49,7 +48,7 @@
   }
 
   function updateNodeDataAndCode() {
-    console.log("updateNodeDataAndCode")
+    console.log("updateNodeDataAndCode");
     const code = generateArduinoCode();
     arduinoCode.set(code);
     updateNodeData(id, {
@@ -60,11 +59,9 @@
     });
   }
 
-
-
   function handleMinimize() {
     // Get the edges connected to this node
-    console.log("handleMinimize")
+    console.log("handleMinimize");
     const edges_aux = getEdges().filter(
       (edge) => edge.source === id || edge.target === id,
     );
@@ -78,11 +75,13 @@
     // Create a new edge between the nodes that were connected to the current node
     const newEdge: Edge[] = [
       {
-        id:`${edge1.id.substring(0,(edge1.id.lastIndexOf('-')-1))}1`,
+        id: `${edge1.id.substring(0, edge1.id.lastIndexOf("-") - 1)}1`,
         type: edge1.type || "default", // Assuming the same type as the first edge
         source: newSource,
+        sourceHandle: edge1.sourceHandle,
         target: newTarget,
-        data: data
+        targetHandle: edge2.targetHandle,
+        data: data,
       },
     ];
 
