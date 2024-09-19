@@ -10,7 +10,6 @@
 
   export let id: $$Props["id"];
   export let data: $$Props["data"];
-  console.log("data", data);
   const nodes = getNodes();
   const modalNode = nodes.find((n) => n.id === id);
 

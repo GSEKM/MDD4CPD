@@ -17,15 +17,15 @@
     import ModalNode from "./components/nodes/ModalNode.svelte";
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import ResultNode from "./components/nodes/ResultNode.svelte";
-    import { initialNodes, initialEdges } from "./components/edges_and_nodes";
     import NodeModal from "./components/nodes/NodeModal.svelte";
     import CustomEdge from "./components/edges/CustomEdge.svelte";
 
+    import {edges, nodes} from "./components/code/store";
+
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
-        useSvelteFlow();
-    const nodes = writable<Node[]>(initialNodes);
-    const edges = writable<Edge[]>(initialEdges);
+    useSvelteFlow();
+
 
     // Specify node types
     const nodeTypes: NodeTypes = {
@@ -122,7 +122,6 @@
 
         // Remove the original edge
         edges.update((e) => e.filter((edgeItem) => edgeItem.id !== edge.id));
-
         // Create new edges
         const newEdges: Edge[] = [
             {
@@ -157,15 +156,6 @@
             sourceNode,
             sourceNode.data.extras?.inputParameterName,
         );
-
-        /*
- if zoom < 100
-        mode= max
-if zoom < 200
-        mode= mid
-if zoom < 300
-        mode= min
-*/
 
         const newNode: Node = {
             id: `${modalNodeId++}`,

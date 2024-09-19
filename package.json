@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@xyflow/svelte": "0.0.41"
+    "@xyflow/svelte": "0.0.41",
+    "vite-svelte-starter": "file:"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.4.4",

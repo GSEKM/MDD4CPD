@@ -4,78 +4,43 @@
     Position,
     type NodeProps,
     useSvelteFlow,
+    type Edge,
   } from "@xyflow/svelte";
-  import { writable } from 'svelte/store';
-  
-  //Defining the props 
+  import { writable } from "svelte/store";
+  import { edges } from '../code/store';
+
+  //Defining the props
   type $$Props = NodeProps;
 
   export let id: $$Props["id"];
   export let data: $$Props["data"];
 
   //instantiating the svelteFlow store
-  const { updateNodeData,deleteElements} = useSvelteFlow();
+  const { updateNodeData, deleteElements, getEdges } = useSvelteFlow();
 
-  const int_numbers = [
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-  ];
 
-  const float_numbers = [
-    { value: '1.0000', label: '1.0000' },
-    { value: '2.0000', label: '2.0000' },
-  ];
+  let selectedMethodOption = data.selectedMethodOption || "";
 
-  let selectedIntOption = data.selectedIntOption || '';
-  let selectedFloatOption = data.selectedFloatOption || '';
-  let selectedMethodOption = data.selectedMethodOption || '';
-  let inputText = data.text || '';
-  let methods = data.methods || '';
+  let methods = data.methods || "";
   let methodsEnd = data.methodsEnd || [];
+
   // procurar por === nome do metodo para passar paramentros para o metodo
   //Getting methods from target node
-  const targetMethods = [
-    { value: methodsEnd }
-  ];
+  
+  const targetMethods = [{ value: methodsEnd }];
 
   const arduinoCode = writable(generateArduinoCode());
-
-  const handleSelectInt = (event) => {
-    selectedIntOption = event.target.value;
-    updateNodeDataAndCode();
-  };
-
-  const handleSelectFloat = (event) => {
-    selectedFloatOption = event.target.value;
-    updateNodeDataAndCode();
-  };
 
   const handleSelectMethod = (event) => {
     selectedMethodOption = event.target.value;
     updateNodeDataAndCode();
   };
 
-  const handleTextInput = (event) => {
-    inputText = event.target.value;
-    updateNodeDataAndCode();
-  };
-
   function generateArduinoCode() {
-    let code = '';
+    let code = "";
     if (methods) {
       code += `${methods}{\n`;
-      if (selectedIntOption){
-        code += `  int meuInteiro = ${selectedIntOption}\n`;
-      }
-      if (selectedFloatOption) {
-        code += `  float meuFloat = ${selectedFloatOption}\n`;
-      }
-      if (inputText) {
-        code += `  String minhaString = ${inputText}\n`;
-      }
-      if (selectedMethodOption) {
-        code += `  ${selectedMethodOption}\n`;
-      }
+      code += `  ${methodsEnd}()\n`;
       code += `}\n\n`;
     }
     return code;
@@ -85,55 +50,50 @@
     const code = generateArduinoCode();
     arduinoCode.set(code);
     updateNodeData(id, {
-      selectedIntOption,
-      selectedFloatOption,
       selectedMethodOption,
-      text: inputText,
       methods,
       methodsEnd,
-      generatedCode: code
+      generatedCode: code,
     });
   }
 
+
+
   function handleMinimize() {
+    // Get the edges connected to this node
+    const edges_aux = getEdges().filter(
+      (edge) => edge.source === id || edge.target === id,
+    );
+
+    const [edge1, edge2] = edges_aux;
+
+    const newSource = edge1.source === id ? edge1.target : edge1.source;
+    const newTarget = edge2.source === id ? edge2.target : edge2.source;
+
+    console.log(newSource, newTarget);
+    // Create a new edge between the nodes that were connected to the current node
+    const newEdge: Edge[] = [
+      {
+        id: `edge-${newSource}-${newTarget}`,
+        type: edge1.type || "default", // Assuming the same type as the first edge
+        source: newSource,
+        target: newTarget,
+        data: data
+      },
+    ];
+
+    // Add the new edge
+    edges.update((e) => [...e, ...newEdge]);
+
+    // Delete the current node and its edges
     deleteElements({ nodes: [{ id }] });
   }
 </script>
 
-
 <div class="custom">
-  <button class="close-button" on:click={handleMinimize}>
-    -
-  </button>
-  <div class="label">Modal Node</div>
+  <button class="close-button" on:click={handleMinimize}> - </button>
   <div class="label">
-    Criar parametro inteiro:
-    <select bind:value={selectedIntOption} on:change={handleSelectInt}>
-      {#each int_numbers as option}
-        <option value={option.value}>{option.label}</option>
-      {/each}
-    </select>
-  </div>
-
-  <div class="label">
-    Criar parametro float:
-    <select bind:value={selectedFloatOption} on:change={handleSelectFloat}>
-      {#each float_numbers as option}
-        <option value={option.value}>{option.label}</option>
-      {/each}
-    </select>
-  </div>
-
-  <div class="label">
-    Criar parametro String:
-    <input
-      bind:value={inputText}
-      on:input={handleTextInput}
-    />
-  </div>
-
-  <div class="label">
-    Metodos:
+    Parameters:
     <select bind:value={selectedMethodOption} on:change={handleSelectMethod}>
       {#each targetMethods as method}
         <option value={method.value}>{method.value}</option>
@@ -141,7 +101,7 @@
     </select>
   </div>
   <Handle type="source" position={Position.Right} />
-  <Handle type="target" position={Position.Left}/>
+  <Handle type="target" position={Position.Left} />
 </div>
 
 <div class="output">
@@ -173,13 +133,13 @@
   .close-button {
     width: 10px;
     height: 10px;
-    background-color: grey; 
-    border-radius: 50%; 
-    color: white; 
+    background-color: grey;
+    border-radius: 50%;
+    color: white;
     font-size: 20px;
-    cursor: pointer; 
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
-    transition: background-color 0.3s; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -187,10 +147,10 @@
   }
 
   .close-button:hover {
-    background-color: #a19d9d; 
+    background-color: #a19d9d;
   }
 
   .close-button:focus {
-    outline: none; 
+    outline: none;
   }
 </style>
