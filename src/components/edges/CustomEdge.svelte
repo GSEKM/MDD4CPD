@@ -14,7 +14,10 @@
   export let targetX: $$Props["targetX"];
   export let targetY: $$Props["targetY"];
   export let targetPosition: $$Props["targetPosition"];
-  export let data: $$Props["data"] = undefined;
+  export let data: $$Props["data"] = {
+    label: "test",
+
+  };
 
   $: [edgePath, labelX, labelY] = getBezierPath({
     sourceX,

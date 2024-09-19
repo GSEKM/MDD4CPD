@@ -79,11 +79,14 @@
 
         const nodesAux: Node[] = getNodes();
 
-        const sourceNode = nodesAux.find((node) => node.id === edge.source);
+        const sourceNode = nodesAux.find((node) => node.id === edge.source) ;
         const targetNode = nodesAux.find((node) => node.id === edge.target);
 
+        console.log('sourceNode.handles', sourceNode.data.handles)
+        console.log('edge',edge)
+
         // Find the handle that matches the edge
-        const handle = sourceNode.data.handles.find(
+        const handle = sourceNode?.data?.handles.find(
             (h) => h.id === edge.sourceHandle,
         );
 
@@ -104,14 +107,18 @@
         const methodEnd = handleEnd ? handleEnd.edge : "";
 
         // Create the new modal node
+
+        const newData = {
+                text: sourceNode.data.text,
+                methods: [method], // Pass the specific method
+                methodsEnd: [methodEnd],}
+
+        console.log('Criando newNode', newData)
+        
         const newNode: Node = {
             id: `${modalNodeId++}`,
             type: "modal",
-            data: {
-                text: sourceNode.data.text,
-                methods: [method], // Pass the specific method
-                methodsEnd: [methodEnd],
-            },
+            data:newData,
             position: {
                 x: (sourceNode.position.x + targetNode.position.x) / 2,
                 y: (sourceNode.position.y + targetNode.position.y) / 2,
@@ -125,13 +132,13 @@
         // Create new edges
         const newEdges: Edge[] = [
             {
-                id: `edge-${Math.random()}`,
+                id: `${edge.id}-left`,
                 source: edge.source,
                 target: newNode.id,
                 sourceHandle: edge.sourceHandle,
             },
             {
-                id: `edge-${Math.random()}`,
+                id: `${edge.id}-right`,
                 source: newNode.id,
                 target: edge.target,
                 targetHandle: edge.targetHandle,

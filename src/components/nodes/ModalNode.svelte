@@ -32,11 +32,13 @@
   const arduinoCode = writable(generateArduinoCode());
 
   const handleSelectMethod = (event) => {
+    console.log("handleSelectMethod")
     selectedMethodOption = event.target.value;
     updateNodeDataAndCode();
   };
 
   function generateArduinoCode() {
+    console.log("generateArduinoCode")
     let code = "";
     if (methods) {
       code += `${methods}{\n`;
@@ -47,6 +49,7 @@
   }
 
   function updateNodeDataAndCode() {
+    console.log("updateNodeDataAndCode")
     const code = generateArduinoCode();
     arduinoCode.set(code);
     updateNodeData(id, {
@@ -61,6 +64,7 @@
 
   function handleMinimize() {
     // Get the edges connected to this node
+    console.log("handleMinimize")
     const edges_aux = getEdges().filter(
       (edge) => edge.source === id || edge.target === id,
     );
@@ -70,11 +74,11 @@
     const newSource = edge1.source === id ? edge1.target : edge1.source;
     const newTarget = edge2.source === id ? edge2.target : edge2.source;
 
-    console.log(newSource, newTarget);
+    console.log("minimizando", data, newSource, newTarget);
     // Create a new edge between the nodes that were connected to the current node
     const newEdge: Edge[] = [
       {
-        id: `edge-${newSource}-${newTarget}`,
+        id:`${edge1.id.substring(0,(edge1.id.lastIndexOf('-')-1))}1`,
         type: edge1.type || "default", // Assuming the same type as the first edge
         source: newSource,
         target: newTarget,
