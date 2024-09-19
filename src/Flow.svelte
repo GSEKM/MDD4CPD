@@ -21,6 +21,7 @@
     import CustomEdge from "./components/edges/CustomEdge.svelte";
 
     import { edges, nodes } from "./components/code/store";
+    import App from "./App.svelte";
 
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
@@ -87,7 +88,7 @@
         );
         console.log("sourceNode.handles", sourceNode.data.handles);
         console.log("handle", handle);
-        console.log("edge", edge);
+        console.log("edge.data", edge.data);
         function defineHandleEnd() {
             if (targetNode.data.handles === undefined) {
                 return;
@@ -107,6 +108,7 @@
         // Create the new modal node
 
         const newData = {
+            ...edge?.data,
             text: sourceNode.data.text,
             methods: [method], // Pass the specific method
             methodsEnd: [methodEnd],

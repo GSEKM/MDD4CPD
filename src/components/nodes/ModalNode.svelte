@@ -26,15 +26,8 @@
   // procurar por === nome do metodo para passar paramentros para o metodo
   //Getting methods from target node
 
-  const targetMethods = [{ value: methodsEnd }];
-
   const arduinoCode = writable(generateArduinoCode());
-
-  const handleSelectMethod = (event) => {
-    console.log("handleSelectMethod");
-    selectedMethodOption = event.target.value;
-    updateNodeDataAndCode();
-  };
+  let parametersInput = data?.parametersInput || "";
 
   function generateArduinoCode() {
     console.log("generateArduinoCode");
@@ -71,7 +64,14 @@
     const newSource = edge1.source === id ? edge1.target : edge1.source;
     const newTarget = edge2.source === id ? edge2.target : edge2.source;
 
-    console.log("minimizando", data, newSource, newTarget);
+    console.log(
+      "minimizando",
+      data,
+      newSource,
+      newTarget,
+      parametersInput,
+      "test",
+    );
     // Create a new edge between the nodes that were connected to the current node
     const newEdge: Edge[] = [
       {
@@ -81,7 +81,7 @@
         sourceHandle: edge1.sourceHandle,
         target: newTarget,
         targetHandle: edge2.targetHandle,
-        data: data,
+        data: { ...data, parametersInput },
       },
     ];
 
@@ -97,11 +97,7 @@
   <button class="close-button" on:click={handleMinimize}> - </button>
   <div class="label">
     Parameters:
-    <select bind:value={selectedMethodOption} on:change={handleSelectMethod}>
-      {#each targetMethods as method}
-        <option value={method.value}>{method.value}</option>
-      {/each}
-    </select>
+    <input bind:value={parametersInput} />
   </div>
   <Handle type="source" position={Position.Right} />
   <Handle type="target" position={Position.Left} />
