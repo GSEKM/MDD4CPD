@@ -18,34 +18,45 @@
   //instantiating the svelteFlow store
   const { updateNodeData, deleteElements, getEdges } = useSvelteFlow();
 
-  let selectedMethodOption = data.selectedMethodOption || "";
+  let selectedParameter = data.selectedParameter || "";
 
   let methods = data.methods || "";
   let methodsEnd = data.methodsEnd || [];
-
-  // procurar por === nome do metodo para passar paramentros para o metodo
-  //Getting methods from target node
 
   const arduinoCode = writable(generateArduinoCode());
   let parametersInput = data?.parametersInput || "";
 
   function generateArduinoCode() {
-    console.log("generateArduinoCode");
     let code = "";
     if (methods) {
       code += `${methods}{\n`;
-      code += `  ${methodsEnd}()\n`;
+      code += `  ${methodsEnd}\n`;
       code += `}\n\n`;
     }
     return code;
   }
 
+  function updateMethodsEnd() {
+    if (Array.isArray(methodsEnd)) {
+      // Itera sobre cada item no array methodsEnd
+      methodsEnd = methodsEnd.map((method) => {
+        if (method.includes("(")) {
+          // Substitui o conteúdo dentro dos parênteses pelo selectedParameter
+          return method.replace(/\(.*?\)/, `(${selectedParameter})`);
+        } else {
+          // Se não houver parênteses, adiciona-os com o selectedParameter
+          return `${method}(${selectedParameter})`;
+        }
+      });
+    }
+  }
+
   function updateNodeDataAndCode() {
-    console.log("updateNodeDataAndCode");
+    updateMethodsEnd();
     const code = generateArduinoCode();
     arduinoCode.set(code);
     updateNodeData(id, {
-      selectedMethodOption,
+      selectedParameter,
       methods,
       methodsEnd,
       generatedCode: code,
@@ -54,7 +65,7 @@
 
   function handleMinimize() {
     // Get the edges connected to this node
-    console.log("handleMinimize");
+
     const edges_aux = getEdges().filter(
       (edge) => edge.source === id || edge.target === id,
     );
@@ -64,14 +75,6 @@
     const newSource = edge1.source === id ? edge1.target : edge1.source;
     const newTarget = edge2.source === id ? edge2.target : edge2.source;
 
-    console.log(
-      "minimizando",
-      data,
-      newSource,
-      newTarget,
-      parametersInput,
-      "test",
-    );
     // Create a new edge between the nodes that were connected to the current node
     const newEdge: Edge[] = [
       {
@@ -91,13 +94,45 @@
     // Delete the current node and its edges
     deleteElements({ nodes: [{ id }] });
   }
+
+  // Geting the parameters from the source node
+  const edges_aux = getEdges().filter(
+    (edge) => edge.source === id || edge.target === id,
+  );
+
+  const [edge1] = edges_aux;
+
+  const newSource = edge1.source === id ? edge1.target : edge1.source;
+
+  const { getNodes } = useSvelteFlow();
+  const nodes = getNodes();
+
+  const sourceNode = nodes.find((n) => n.id === newSource);
+
+  let parameters = [
+    {
+      //@ts-ignore
+      value: sourceNode.data.extras.inputParameterContent,
+      //@ts-ignore
+      label: sourceNode.data.extras.inputParameterName,
+    },
+  ];
+
+  const handleParameterSelect = (event) => {
+    selectedParameter = event.target.value;
+    updateNodeDataAndCode();
+  };
 </script>
 
 <div class="custom">
   <button class="close-button" on:click={handleMinimize}> - </button>
   <div class="label">
     Parameters:
-    <input bind:value={parametersInput} />
+    <select bind:value={selectedParameter} on:change={handleParameterSelect}>
+      {#each parameters as option}
+        <option value={option.label}>{option.label}</option>
+      {/each}
+    </select>
   </div>
   <Handle type="source" position={Position.Right} />
   <Handle type="target" position={Position.Left} />
