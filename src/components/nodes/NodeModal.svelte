@@ -125,11 +125,14 @@
 
     //@ts-ignore
     sourceNode.data.extras.inputParameterName = inputParameterName;
+    //@ts-ignore
+    sourceNode.data.extras.inputParameterContent = inputParameterContent;
+
     updateNodeData(sourceNode.id, sourceNode.data);
-    console.log("inputparam", inputParameterName);
     updateNodeData(id, {
       selectedType,
       inputParameterName,
+      inputParameterContent,
       declarationLocation,
       inputMethodName,
       selectedRetunType,
