@@ -10,12 +10,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mui/icons-material": "^6.1.1",
     "@xyflow/svelte": "0.0.41",
+    "gojs": "^3.0.11",
+    "prismjs": "^1.29.0",
+    "react": "^18.3.1",
+    "react-tooltip": "^5.28.0",
+    "react-xarrows": "^2.0.2",
     "vite-svelte-starter": "file:"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.4.4",
     "@types/node": "^20.12.13",
+    "@types/prismjs": "^1.26.4",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "svelte": "^4.2.15",
