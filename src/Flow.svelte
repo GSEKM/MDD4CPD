@@ -19,9 +19,8 @@
     import ResultNode from "./components/nodes/ResultNode.svelte";
     import NodeModal from "./components/nodes/NodeModal.svelte";
     import CustomEdge from "./components/edges/CustomEdge.svelte";
-
     import { edges, nodes } from "./components/code/store";
-    import App from "./App.svelte";
+    import generateCode from "./components/code/code";
 
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
@@ -159,12 +158,6 @@
         if (sourceNode.type === "config" || sourceNode.type === "modal") return;
         if (!sourceNode) return;
 
-        console.log(
-            "creating from",
-            sourceNode,
-            sourceNode.data.extras?.inputParameterName,
-        );
-
         const newNode: Node = {
             id: `${modalNodeId++}`,
             type: "config",
@@ -185,13 +178,18 @@
 
         nodes.update((n) => [...n, newNode]);
     };
+
+    export function getRepresentation() {
+        const representation = toObject();
+        return { model: JSON.stringify(representation) };
+    }
 </script>
 
 <main>
     <button
         class="save-button"
         on:click={() => {
-            console.log("representation", toObject());
+            generateCode(getRepresentation());
         }}>Salvar</button
     >
     <SvelteFlow
