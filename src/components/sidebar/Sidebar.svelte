@@ -10,23 +10,31 @@
       event.dataTransfer.effectAllowed = "move";
     }
   };
+
+  const types = Array.from(new Set(nodes.map((node: any) => node.extras.type)));
+  console.log(types);
 </script>
 
 <aside>
   <div class="mb-0"></div>
   <div class="flexbox items-center justify-center">
-    {#each nodes as node}
-      <div
-        class="output-node node"
-        role="button"
-        tabindex="0"
-        draggable={true}
-        on:dragstart={(event) => onDragStart(event, node)}
-        title={node.extras.description}
-        style={`border-color: ${node.color}`}
-      >
-        {node.name}
-      </div>
+    {#each types as type}
+      <div>{type}</div>
+      {#each nodes as node}
+        {#if node.extras.type == type}
+          <div
+            class="output-node node"
+            role="button"
+            tabindex="0"
+            draggable={true}
+            on:dragstart={(event) => onDragStart(event, node)}
+            title={node.extras.description}
+            style={`border-color: ${node.color}`}
+          >
+            {node.name}
+          </div>
+        {/if}
+      {/each}
     {/each}
   </div>
 </aside>
