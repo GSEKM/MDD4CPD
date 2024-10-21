@@ -104,15 +104,15 @@
       });
     });
   }
-
   // Update the node data to include the handles
   updateNodeData(id, {
     ...typedData,
     handles: handles,
   });
 
-  function handleClose() {
-    console.log("test");
+  export function handleClose() {
+    console.log(id);
+    return id;
   }
 </script>
 

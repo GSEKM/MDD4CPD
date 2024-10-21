@@ -34,7 +34,6 @@
   let inputParameterContent = data.inputParameterContent || "";
   let declarationLocation = data.declarationLocation || "";
   let typeOfDeclaration = data.typeOfDeclaration || "variables";
-
   let selectedRetunType = data.selectedRetunType || "";
   let inputMethodName = data.inputMethodName || "";
   let methodDeclarationLocation = data.methodDeclarationLocation || "";
@@ -124,9 +123,9 @@
     arduinoCode.set(newCode);
 
     //@ts-ignore
-    sourceNode.data.extras.inputParameterName = inputParameterName;
-    //@ts-ignore
-    sourceNode.data.extras.inputParameterContent = inputParameterContent;
+    (sourceNode.data.extras.variables =
+      selectedType + " " + inputParameterName),
+      (sourceNode.data.extras.parameters = inputParameterContent);
 
     updateNodeData(sourceNode.id, sourceNode.data);
     updateNodeData(id, {

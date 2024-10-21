@@ -43,7 +43,7 @@
 
   .node {
     margin: 0.5rem;
-    border: 2px  solid #111;
+    border: 2px solid #111;
     border-radius: 10px;
     padding: 0.5rem 1rem;
     font-weight: 700;
