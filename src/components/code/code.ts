@@ -1,6 +1,5 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import Prism from "prismjs";
-import { Fragment, useEffect } from "react";
 import "./prism.css";
 // import PrismEdit from "./PrismEdit";
 import Xarrow from "react-xarrows";
@@ -12,7 +11,6 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 // import GoClass from "./GoClass"; // acredito que seja a representação do diagrama 
 
 //import { processDynamic } from "./goBuilder"; // esse cara monta a representação 
-import React from "react";
 import { getConnectedEdges } from '@xyflow/svelte';
 import Flow, * as flow from "../../Flow.svelte";
 import { get } from "http";
@@ -664,111 +662,4 @@ export default function Code(props: { model: string }) {
     }
     console.log("code", code);
 
-    useEffect(() => {
-        Prism.highlightAll();
-    }, [props]);
-    return (
-        <div className="Code">
-            {/* <div
-                style={{
-                    border:
-                        problems.length !== 0 ? "solid yellow 2px" : "dotted black 2px",
-                }}
-            >
-                <div
-                    style={{
-                        border:
-                            problems.length !== 0 ? "solid yellow 1px" : "dotted white 1px",
-                        fontSize: "1em",
-                    }}
-                >
-                    {problems.length} Problems!
-                </div>
-                {uniqueProblems.map((p: any, index: any) => {
-                    const problemNodes = problems
-                        .filter((problem) => problem.message === p.message)
-                        .map((problem) => problem.node);
-
-                    // console.log(problemNodes);
-
-                    let nodes: any[] = [];
-                    let edges: any[] = [];
-
-                    problemNodes.forEach((pn) => {
-                        if (pn?.id) {
-                            const el = document.querySelector(`[data-nodeid='${pn.id}']`);
-                            if (el) el.setAttribute("id", pn.id);
-
-                            ({ nodes, edges } = processDynamic(pn, 0, false, p.port));
-                        }
-                    });
-
-                    const problemId = p.node
-                        ? "problem-" + p.node.id + index
-                        : "problem-nodeless" + index;
-
-                    return (
-                        <div
-                            id={problemId}
-                            key={problemId}
-                            style={{ fontSize: "0.6em", border: "solid white 1px" }}
-                        >
-                            Model violation: {p.message}
-                            {p.node && (
-                                <>
-                                    <a
-                                        data-tip
-                                        data-for={"tip-" + problemId}
-                                        style={{ float: "left", marginRight: "6px" }}
-                                    >
-                                        <OpenInNewIcon style={{ fontSize: "1rem" }} />
-                                    </a>
-                                    <ReactTooltip
-                                        className="interactableTooltip"
-                                        id={"tip-" + problemId}
-                                        type="light"
-                                        place="bottom"
-                                        delayHide={500}
-                                        effect="solid"
-                                    >
-                                        <div className="miniGoHolder">
-                                            <GoClass edgedata={edges} nodedata={nodes} />
-                                        </div>
-                                    </ReactTooltip>
-                                </>
-                            )}
-                            {problemNodes.map((pn) => {
-                                if (pn?.id) return (
-                                    <div
-                                        key={index}
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "space-evenly",
-                                            width: "100%",
-                                        }}
-                                    >
-                                        <Xarrow
-                                            strokeWidth={2}
-                                            start={problemId}
-                                            end={pn.id}
-                                            color="yellow"
-                                        />
-                                    </div>
-                                )
-                                return <></>;
-                            })}
-                        </div>
-                    );
-                })}
-            </div> */}
-            <pre
-                style={{
-                    height: "100%",
-                    overflow: "auto",
-                }}
-            >
-                <code className="language-clike">{code}</code>
-            </pre>
-        </div >
-    );
 }

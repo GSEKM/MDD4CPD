@@ -33,6 +33,7 @@
     "src/**/*.d.ts",
     "src/**/*.js",
     "src/**/*.svelte",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    "src/components/code/code.ts"
   ],
 }
