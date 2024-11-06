@@ -11,7 +11,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 
 // import GoClass from "./GoClass"; // acredito que seja a representação do diagrama 
 
-// import { processDynamic } from "./goBuilder"; // esse cara monta a representação 
+//import { processDynamic } from "./goBuilder"; // esse cara monta a representação 
 import React from "react";
 
 import Flow, * as flow from "../../Flow.svelte";
@@ -50,16 +50,7 @@ const paramTypes = [
     "built-in-constant",
 ];
 
-let representationAux: any = null;
-let representation: any = null;
-
-export function generateCode(model: any): { code: string; problems: any[] } {
-    if (model !== undefined) {
-        console.log("Model is defined");
-        console.log("Model", model);
-    } else {
-        console.log('Model is undefined');
-    }
+function generateCode(model: any): { code: string; problems: any[] } {
     // #region Reviewed Functions
     function addConstantDeclarations(constants: any) {
         if (constants.length > 0) {
@@ -76,39 +67,21 @@ export function generateCode(model: any): { code: string; problems: any[] } {
             });
         }
     }
-    function addVariableDeclarations() {
-        add("");
-        add("// Variables");
-
-        // Collect variables from all nodes
-        const variables = nodes.reduce((acc, node) => {
-            if (node.data?.extras?.variables) {
-                return acc.concat(node.data.extras.variables, node.data.extras.parameters);
-            }
-            return acc;
-        }, []);
-
-        const parameters = nodes.reduce((acc, node) => {
-            if (node.data?.extras?.parameters) {
-                return acc.concat(node.data.extras.parameters);
-            }
-            return acc;
-        }, []);
-
+    function addVariableDeclarations(variables: any) {
         if (variables.length > 0) {
+            add("");
+            add("// Variables");
             variables.forEach((variable: any) => {
-                let parametersAux: any = [];
-                const isArray = parameters.length >= 1;
-                parametersAux = isArray ? "" + parameters.map((x: any) => x) + "" : parameters;
+                let params = variable.extras.value.split(",");
+                const isArray = params.length > 1;
+                const count = isArray ? "[" + params.length + "]" : "";
+                params = isArray ? "{" + params.map((x: any) => x) + "}" : params;
 
-
-                const equals = parametersAux[0] !== "" ? "=" : "";
+                const equals = params[0] !== "" ? "=" : "";
                 add(
-                    `${variable} ${equals} ${parametersAux}; `
+                    `${variable.extras.returnType} ${variable.extras.name}${count} ${equals} ${params}; `
                 );
             });
-        } else {
-            console.log("No variables found or variables is not an array.");
         }
     }
     function addFunctionDeclarations(functions: any) {
@@ -181,14 +154,14 @@ export function generateCode(model: any): { code: string; problems: any[] } {
         });
         return code.join("\n");
     }
-    function warnAboutNodesWithoutLinks(edges: any) {
+    function warnAboutNodesWithoutLinks(nodes: any) {
         nodes.forEach((node: any) => {
             let hasLink = false;
-
-            if (edges.length > 0) {
-                hasLink = true;
-            }
-
+            node.ports.forEach((port: any) => {
+                if (port.links.length > 0) {
+                    hasLink = true;
+                }
+            });
             if (!hasLink) {
                 warn("This component has no links", node);
             }
@@ -212,26 +185,26 @@ export function generateCode(model: any): { code: string; problems: any[] } {
             }
         });
     }
-    // function warnAboutMultipleUsePorts(nodes: any) {
-    //     nodes
-    //         .filter((node: any) => paramTypes.includes(node.data.extras.type))
-    //         .forEach((node: any) => {
-    //             node.edge.forEach((edge: any) => {
-    //                 // console.log("checking ", port);
-    //                 if (edge.links.length > 1) {
-    //                     warn(
-    //                         `This ${node.name.toLowerCase()} has more than one link in the same ${port.label
-    //                         } port.`,
-    //                         node
-    //                     );
-    //                 } else {
-    //                     if (port.name !== "in" && port.links.length === 0) {
-    //                         warn(`This ${node.name.toLowerCase()} is not being used.`, node);
-    //                     }
-    //                 }
-    //             });
-    //         });
-    // }
+    function warnAboutMultipleUsePorts(nodes: any) {
+        nodes
+            .filter((node: any) => paramTypes.includes(node.extras.type))
+            .forEach((node: any) => {
+                node.ports.forEach((port: any) => {
+                    // console.log("checking ", port);
+                    if (port.links.length > 1) {
+                        warn(
+                            `This ${node.name.toLowerCase()} has more than one link in the same ${port.label
+                            } port.`,
+                            node
+                        );
+                    } else {
+                        if (port.name !== "in" && port.links.length === 0) {
+                            warn(`This ${node.name.toLowerCase()} is not being used.`, node);
+                        }
+                    }
+                });
+            });
+    }
     function warnAboutLooseLinks(links: any) {
         links.forEach((link: any) => {
             const fromPort = getPort(link.source, link.sourcePort);
@@ -265,17 +238,16 @@ export function generateCode(model: any): { code: string; problems: any[] } {
 
     function getLinksFromModel(model: any) {
         const temp: any[] = [];
-        Object.entries(model.edges).forEach((edge: any) => {
-            temp.push(edge[1]);
+        Object.entries(model.layers[0].models).forEach((link: any) => {
+            temp.push(link[1]);
         });
         return temp;
     }
     function getNodesFromModel(model: any) {
         const temp: any[] = [];
-        Object.entries(model.nodes).forEach((node: any) => {
+        Object.entries(model.layers[1].models).forEach((node: any) => {
             temp.push(node[1]);
         });
-
         return temp;
     }
     function getComponentsFromNodes(nodes: any) {
@@ -311,17 +283,17 @@ export function generateCode(model: any): { code: string; problems: any[] } {
         return code;
     }
     function addHeaderComments() {
-        add("/* Code generated for ", controller?.data.name);
+        add("/* Code generated for ", controller?.name);
         const uniqueDigitals = [...new Set(usedDigital.map((u) => u.extras.value))];
         const uniqueAnalogs = [...new Set(usedAnalog.map((u) => u.extras.value))];
 
         add(
-            `Analog ports ${uniqueAnalogs.length} /${controller?.data.extras.analogPorts
+            `Analog ports ${uniqueAnalogs.length} /${controller?.extras.analogPorts
             } ${usedAnalog.length > 0 ? `(${uniqueAnalogs.map((port) => port)})` : ""
             } `
         );
         add(
-            `Digital ports ${uniqueDigitals.length}/${controller?.data.extras.digitalPorts
+            `Digital ports ${uniqueDigitals.length}/${controller?.extras.digitalPorts
             } ${usedDigital.length > 0 ? `(${uniqueDigitals.map((port) => port)})` : ""
             }`,
             "    */"
@@ -334,7 +306,7 @@ export function generateCode(model: any): { code: string; problems: any[] } {
         try {
             return nodes
                 .find((n: any) => n.id === nodeID)
-                .edges.find((p: any) => p.id === portID);
+                .ports.find((p: any) => p.id === portID);
         } catch (error) {
             return null;
         }
@@ -367,9 +339,11 @@ export function generateCode(model: any): { code: string; problems: any[] } {
     function addLifecycleMethods() {
         add("");
         add(`// Micro-controller's Lifecycle`);
-        controller?.data.handles.forEach((handle: any) => {
-            add("void ", handle.edge, "{");
-            processLink(handle);
+        controller?.ports.forEach((port: any) => {
+            add("void ", port.label, "{");
+            port.links.forEach((l: any) => {
+                processLink(l);
+            });
             add("}\n");
         });
     }
@@ -636,21 +610,18 @@ export function generateCode(model: any): { code: string; problems: any[] } {
     const nodes: any[] = getNodesFromModel(model);
     const logics: any[] = nodes.filter((node) => node.extras?.type === "logic");
     const components: any[] = getComponentsFromNodes(nodes);
-    const controller = nodes.find((node) => node.data.extras?.type === "controller");
-    const config = nodes.find((node) => node.data.extras?.type === "config");
-
-    const modal = nodes.find((node) => node.data.extras?.type === "modal");
-
-    console.log("custom", config);
-
+    const controller = nodes.find((node) => node.extras?.type === "controller");
     const constants: any[] = nodes
         .filter((node) => node.extras?.type === "constant")
         .map((constant) => {
             constant.extras.name = constant.extras.name.toUpperCase();
             return constant;
         });
+    const variables: any[] = nodes.filter(
+        (node) => node.extras?.type === "variable"
+    );
 
-
+    console.log('varrrr', variables)
 
     const usedDigital: any[] = [
         ...new Set(nodes.filter((node) => node.extras?.portType === "Digital")),
@@ -666,19 +637,16 @@ export function generateCode(model: any): { code: string; problems: any[] } {
     warnAboutNumberOfControllers();
     warnAboutPortUsage();
     warnAboutNodesWithoutLinks(nodes);
-    // warnAboutMultipleUsePorts(nodes);
+    warnAboutMultipleUsePorts(nodes);
     warnAboutLooseLinks(links);
     addLibraries();
     addFunctionDeclarations(logics.filter((l) => l.name === "Function"));
     addConstantDeclarations(constants);
-    addVariableDeclarations();
+    addVariableDeclarations(variables);
     addLifecycleMethods();
     // #endregion
-    console.log("----- Ending Code Generation -----");
-    console.log("generated code", indentCode(code));
     return { code: indentCode(code), problems };
 }
-
 export default function Code(props: { model: string }) {
     // console.log('CodeComponent render')
 
@@ -686,6 +654,7 @@ export default function Code(props: { model: string }) {
     let code = "";
     let problems: any[] = [];
     let uniqueProblems: any[] = [];
+
     if (model === "{}" || model === "") {
     } else {
         ({ code, problems } = generateCode(JSON.parse(model)));
@@ -695,12 +664,12 @@ export default function Code(props: { model: string }) {
         });
     }
 
-    // useEffect(() => {
-    //     Prism.highlightAll();
-    // }, [props]);
+    useEffect(() => {
+        Prism.highlightAll();
+    }, [props]);
     return (
         <div className="Code">
-            <div
+            {/* <div
                 style={{
                     border:
                         problems.length !== 0 ? "solid yellow 2px" : "dotted black 2px",
@@ -723,14 +692,14 @@ export default function Code(props: { model: string }) {
                     // console.log(problemNodes);
 
                     let nodes: any[] = [];
-                    let edges: any[] = [];
+                    let links: any[] = [];
 
                     problemNodes.forEach((pn) => {
                         if (pn?.id) {
                             const el = document.querySelector(`[data-nodeid='${pn.id}']`);
                             if (el) el.setAttribute("id", pn.id);
 
-                            ({ nodes, edges } = representation);
+                            ({ nodes, links } = processDynamic(pn, 0, false, p.port));
                         }
                     });
 
@@ -757,12 +726,13 @@ export default function Code(props: { model: string }) {
                                     <ReactTooltip
                                         className="interactableTooltip"
                                         id={"tip-" + problemId}
-                                        variant="light"
+                                        type="light"
                                         place="bottom"
                                         delayHide={500}
+                                        effect="solid"
                                     >
                                         <div className="miniGoHolder">
-
+                                            <GoClass linkdata={links} nodedata={nodes} />
                                         </div>
                                     </ReactTooltip>
                                 </>
@@ -790,7 +760,7 @@ export default function Code(props: { model: string }) {
                         </div>
                     );
                 })}
-            </div>
+            </div> */}
             <pre
                 style={{
                     height: "100%",
