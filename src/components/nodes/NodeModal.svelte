@@ -80,8 +80,6 @@
     if (typeOfDeclaration == "variables") {
       if (declarationLocation == "global") {
         codev += `${selectedType} ${inputParameterName} = ${inputParameterContent};\n`;
-      } else {
-        codev += `${selectedType} ${inputParameterName} = ${inputParameterContent};\n`;
       }
     }
     if (typeOfDeclaration == "methods") {
@@ -91,10 +89,7 @@
         methodDeclarationLocation,
       );
       if (methodDeclarationLocation == "global") {
-        codev += `${selectedRetunType} ${inputMethodName}();\n\n`;
-      }
-      if (methodDeclarationLocation != "global") {
-        codev += `${selectedRetunType} ${inputMethodName}();\n\n`;
+        codev += `${selectedRetunType} ${inputMethodName}();\n`;
       }
     }
     return codev;
@@ -106,7 +101,6 @@
     if (Array.isArray(methods)) {
       methods.forEach((method) => {
         if (!methodExists(method, code)) {
-          console.log(method);
           code += `${method} {\n ${declarationLocation == method ? `${selectedType} ${inputParameterName} = ${inputParameterContent} ;\n` : ""}`;
           code += `}\n`;
         }
@@ -117,8 +111,7 @@
 
   // Função para atualizar dados e código do node
   function updateNodeDataAndCode() {
-    const precode = generateArduinoPreCode();
-    const newCode = generateArduinoCode(precode);
+    const newCode = generateArduinoCode(generateArduinoPreCode());
     updateGlobalCode(newCode);
     arduinoCode.set(newCode);
 
@@ -228,6 +221,7 @@
     </div>
   </div>
 {/if}
+
 {#if typeOfDeclaration === "methods"}
   <div class="custom">
     <button class="close-button" on:click={handleMinimize}> - </button>

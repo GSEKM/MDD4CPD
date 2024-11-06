@@ -13,7 +13,7 @@
         type NodeTypes,
     } from "@xyflow/svelte";
     import Sidebar from "./components/sidebar/Sidebar.svelte";
-    import paletteNodes from "../src/nodes.json";
+    import paletteNodes from "./nodes.json";
     import ModalNode from "./components/nodes/ModalNode.svelte";
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import ResultNode from "./components/nodes/ResultNode.svelte";
