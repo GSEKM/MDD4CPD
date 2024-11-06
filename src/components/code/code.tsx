@@ -88,7 +88,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         if (functions.length > 0) {
             add("// Functions");
             functions.forEach((logic: any) => {
-                if (getPort(logic.id, logic.portsInOrder[0]).links.length === 0) {
+                if (getPort(logic.id, logic.portsInOrder[0]).edges.length === 0) {
                     declareFunction(logic);
                 }
             });
@@ -97,7 +97,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function declareFunction(logic: any) {
         add(`${logic.extras.returnType} ${logic.extras.value}(){`);
         const callPort = logic.ports.find((x: any) => x.alignment === "right");
-        callPort.links.forEach((l: any) => {
+        callPort.edges.forEach((l: any) => {
             processLink(l);
         });
         add("}");
@@ -154,7 +154,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         });
         return code.join("\n");
     }
-    function warnAboutNodesWithoutLinks(nodes: any) {
+    function warnAboutNodesWithoutEdges(nodes: any) {
         nodes.forEach((node: any) => {
             let hasLink = false;
             /*
@@ -165,7 +165,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
                           );
             */
             if (!hasLink) {
-                warn("This component has no links", node);
+                warn("This component has no edges", node);
             }
         });
     }
@@ -193,27 +193,27 @@ function generateCode(model: any): { code: string; problems: any[] } {
             .forEach((node: any) => {
                 node.ports.forEach((port: any) => {
                     // console.log("checking ", port);
-                    if (port.links.length > 1) {
+                    if (port.edges.length > 1) {
                         warn(
-                            `This ${node.name.toLowerCase()} has more than one link in the same ${port.label
+                            `This ${node.name.toLowerCase()} has more than one edge in the same ${port.label
                             } port.`,
                             node
                         );
                     } else {
-                        if (port.name !== "in" && port.links.length === 0) {
+                        if (port.name !== "in" && port.edges.length === 0) {
                             warn(`This ${node.name.toLowerCase()} is not being used.`, node);
                         }
                     }
                 });
             });
     }
-    function warnAboutLooseLinks(links: any) {
-        links.forEach((link: any) => {
-            const fromPort = getPort(link.source, link.sourcePort);
+    function warnAboutLooseEdges(edges: any) {
+        edges.forEach((edge: any) => {
+            const fromPort = getPort(edge.source, edge.sourcePort);
             const fromNode = getNode(fromPort?.parentNode);
-            const toPort = getPort(link.target, link.targetPort);
+            const toPort = getPort(edge.target, edge.targetPort);
             if (!toPort) {
-                warn("Loose link", fromNode);
+                warn("Loose edge", fromNode);
             }
         });
     }
@@ -238,10 +238,10 @@ function generateCode(model: any): { code: string; problems: any[] } {
         return "ok";
     }
 
-    function getLinksFromModel(model: any) {
+    function getEdgesFromModel(model: any) {
         const temp: any[] = [];
-        Object.entries(model.edges).forEach((link: any) => {
-            temp.push(link[1]);
+        Object.entries(model.edges).forEach((edge: any) => {
+            temp.push(edge[1]);
         });
         return temp;
     }
@@ -301,8 +301,8 @@ function generateCode(model: any): { code: string; problems: any[] } {
             "    */"
         );
     }
-    function getLink(linkID: string) {
-        return links.find((l) => l.id === linkID);
+    function getLink(edgeID: string) {
+        return edges.find((l) => l.id === edgeID);
     }
     function getPort(nodeID: string, portID: string) {
         try {
@@ -343,7 +343,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         add(`// Micro-controller's Lifecycle`);
         controller?.ports.forEach((port: any) => {
             add("void ", port.label, "{");
-            port.links.forEach((l: any) => {
+            port.edges.forEach((l: any) => {
                 processLink(l);
             });
             add("}\n");
@@ -455,7 +455,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
                     add("if (", xValue, " " + node.extras.value + " ", yValue, ") {");
                     if (toNode2) {
-                        outcomePort2.links.forEach((l: any) => {
+                        outcomePort2.edges.forEach((l: any) => {
                             processLink(l);
                         });
                     } else {
@@ -463,7 +463,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
                     }
                     if (toNode3) {
                         add("} else {");
-                        outcomePort3.links.forEach((l: any) => {
+                        outcomePort3.edges.forEach((l: any) => {
                             processLink(l);
                         });
                         // callWithParameters(toNode3);
@@ -488,12 +488,12 @@ function generateCode(model: any): { code: string; problems: any[] } {
             //     console.log('error, no parameter?');
             // }
             // node.ports.forEach((port: any) => {
-            //     port.links.forEach((l: any) => {
-            //         const link = getLink(l);
-            //         const toPort = getPort(link.target, link.targetPort);
+            //     port.edges.forEach((l: any) => {
+            //         const edge = getLink(l);
+            //         const toPort = getPort(edge.target, edge.targetPort);
             //         const toNode = getNode(toPort?.parentNode);
             //         if (!toNode) {
-            //         } else if (toNode?.id === node?.id) { //skip as it is the previous link
+            //         } else if (toNode?.id === node?.id) { //skip as it is the previous edge
             //             if (toNode.instance) {
             //                 add(toNode.instance + '.' + toPort.name.split("(").shift() + '(' + contents + ');');
             //             }
@@ -510,10 +510,10 @@ function generateCode(model: any): { code: string; problems: any[] } {
         }
         function getCoditionalValue(conditionNode: any, portName: any): string {
             try {
-                let linkID = conditionNode.ports.find((p: any) => p.name === portName)
-                    .links[0];
-                let link = getLink(linkID);
-                let port = getPort(link.source, link.sourcePort);
+                let edgeID = conditionNode.ports.find((p: any) => p.name === portName)
+                    .edges[0];
+                let edge = getLink(edgeID);
+                let port = getPort(edge.source, edge.sourcePort);
                 let parent = getParent(port);
 
                 if (paramTypes.includes(parent.extras.type)) {
@@ -529,20 +529,20 @@ function generateCode(model: any): { code: string; problems: any[] } {
         }
         function getOutcome(conditionNode: any, ifThis = "body") {
             try {
-                let linkID = conditionNode.ports.find((p: any) => p.name === ifThis)
-                    .links[0];
-                let link = getLink(linkID);
-                return getPort(link.target, link.targetPort);
+                let edgeID = conditionNode.ports.find((p: any) => p.name === ifThis)
+                    .edges[0];
+                let edge = getLink(edgeID);
+                return getPort(edge.target, edge.targetPort);
             } catch (error) {
                 return { label: "// Lacking Outcome" };
             }
         }
 
-        const link = getLink(l);
-        if (!link) return;
-        const fromPort = getPort(link.source, link.sourcePort);
+        const edge = getLink(l);
+        if (!edge) return;
+        const fromPort = getPort(edge.source, edge.sourcePort);
         const fromNode = getNode(fromPort.parentNode);
-        const toPort = getPort(link.target, link.targetPort);
+        const toPort = getPort(edge.target, edge.targetPort);
         if (!toPort) return;
 
         const params: any[] = [];
@@ -558,7 +558,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
                 let nextFromPort = getOutPort(toPort);
                 if (!nextFromPort) return { toPort: undefined, params };
-                let nextLink = getLink(nextFromPort.links[0]);
+                let nextLink = getLink(nextFromPort.edges[0]);
                 if (!nextLink) return { toPort: undefined, params };
                 let nextToPort = getPort(nextLink.target, nextLink.targetPort);
                 if (!nextToPort) return { toPort: undefined, params };
@@ -608,7 +608,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     let code = "";
     const problems: any[] = [];
 
-    const links: any[] = getLinksFromModel(model);
+    const edges: any[] = getEdgesFromModel(model);
     const nodes: any[] = getNodesFromModel(model);
     const logics: any[] = nodes.filter((node) => node.extras?.type === "logic");
     const components: any[] = getComponentsFromNodes(nodes);
@@ -638,9 +638,9 @@ function generateCode(model: any): { code: string; problems: any[] } {
     addHeaderComments();
     warnAboutNumberOfControllers();
     warnAboutPortUsage();
-    warnAboutNodesWithoutLinks(nodes);
+    warnAboutNodesWithoutEdges(nodes);
     warnAboutMultipleUsePorts(nodes);
-    warnAboutLooseLinks(links);
+    warnAboutLooseEdges(edges);
     addLibraries();
     addFunctionDeclarations(logics.filter((l) => l.name === "Function"));
     addConstantDeclarations(constants);
@@ -695,14 +695,14 @@ export default function Code(props: { model: string }) {
                     // console.log(problemNodes);
 
                     let nodes: any[] = [];
-                    let links: any[] = [];
+                    let edges: any[] = [];
 
                     problemNodes.forEach((pn) => {
                         if (pn?.id) {
                             const el = document.querySelector(`[data-nodeid='${pn.id}']`);
                             if (el) el.setAttribute("id", pn.id);
 
-                            ({ nodes, links } = processDynamic(pn, 0, false, p.port));
+                            ({ nodes, edges } = processDynamic(pn, 0, false, p.port));
                         }
                     });
 
@@ -735,7 +735,7 @@ export default function Code(props: { model: string }) {
                                         effect="solid"
                                     >
                                         <div className="miniGoHolder">
-                                            <GoClass linkdata={links} nodedata={nodes} />
+                                            <GoClass edgedata={edges} nodedata={nodes} />
                                         </div>
                                     </ReactTooltip>
                                 </>
