@@ -16,6 +16,8 @@ import React from "react";
 import { getConnectedEdges } from '@xyflow/svelte';
 import Flow, * as flow from "../../Flow.svelte";
 import { get } from "http";
+import { getOutgoers } from '@xyflow/svelte';
+import { getIncomers } from '@xyflow/svelte';
 
 const returnTypes = [
     "byte",
@@ -57,12 +59,12 @@ function generateCode(model: any): { code: string; problems: any[] } {
             add("");
             add("// Constants");
             constants.forEach((constant: any) => {
-                let params = constant.extras.value.split(",");
+                let params = constant.data.extras.value.split(",");
                 const isArray = params.length > 1;
                 const count = isArray ? "[" + params.length + "]" : "";
                 params = isArray ? "{" + params.map((x: any) => x) + "}" : params;
                 add(
-                    `#define ${constant.extras.returnType} ${constant.extras.name}${count} = ${params};`
+                    `#define ${constant.data.extras.returnType} ${constant.data.extras.name}${count} = ${params};`
                 );
             });
         }
@@ -72,14 +74,14 @@ function generateCode(model: any): { code: string; problems: any[] } {
             add("");
             add("// Variables");
             variables.forEach((variable: any) => {
-                let params = variable.extras.value.split(",");
+                let params = variable.data.extras.value.split(",");
                 const isArray = params.length > 1;
                 const count = isArray ? "[" + params.length + "]" : "";
                 params = isArray ? "{" + params.map((x: any) => x) + "}" : params;
 
                 const equals = params[0] !== "" ? "=" : "";
                 add(
-                    `${variable.extras.returnType} ${variable.extras.name}${count} ${equals} ${params}; `
+                    `${variable.data.extras.returnType} ${variable.data.extras.name}${count} ${equals} ${params}; `
                 );
             });
         }
@@ -95,7 +97,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         }
     }
     function declareFunction(logic: any) {
-        add(`${logic.extras.returnType} ${logic.extras.value}(){`);
+        add(`${logic.data.extras.returnType} ${logic.data.extras.value}(){`);
         const callPort = logic.ports.find((x: any) => x.alignment === "right");
         callPort.edges.forEach((l: any) => {
             processLink(l);
@@ -105,7 +107,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
     function addLibraries() {
         const libraries: any[] = [
-            ...new Set(components.map((component) => component.extras.library)),
+            ...new Set(components.map((component) => component.data.extras.library)),
         ];
 
         if (libraries.length > 0) {
@@ -118,20 +120,20 @@ function generateCode(model: any): { code: string; problems: any[] } {
             add("// Objects");
             libraries.forEach((lib: any) => {
                 components.forEach((comp) => {
-                    if (comp.extras.library === lib) add(comp.name + " " + comp.instance);
+                    if (comp.data.extras.library === lib) add(comp.name + " " + comp.instance);
                 });
             });
         }
     }
     function formattedParameters(params: any) {
         return params.map((par: any) => {
-            switch (par.extras.type) {
+            switch (par.data.extras.type) {
                 case "parameter":
                 case "port":
-                    return par.extras.value;
+                    return par.data.extras.value;
                 case "constant":
                 case "variable":
-                    return par.extras.name;
+                    return par.data.extras.name;
                 case "built-in-constant":
                     return par.name;
                 default:
@@ -156,22 +158,17 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     function warnAboutNodesWithoutEdges(nodes: any) {
         nodes.forEach((node: any) => {
-            let hasLink = false;
-            /*
-                        const incomers = getOutgoers(
-                            node,
-                            nodes,
-                            edges,
-                          );
-            */
-            if (!hasLink) {
+            const outgoers = getOutgoers(node, nodes, edges);
+            const incomers = getIncomers(node, nodes, edges);
+
+            if (outgoers.length === 0 && incomers.length === 0) {
                 warn("This component has no edges", node);
             }
         });
     }
     function warnAboutPortUsage() {
         usedDigital.forEach((port) => {
-            if (port.extras.value >= controller?.extras.digitalPorts) {
+            if (port.data.extras.value >= controller?.data.extras.digitalPorts) {
                 warn(
                     `This ${port.name} does not exist on this micro - controller`,
                     port
@@ -179,7 +176,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
             }
         });
         usedAnalog.forEach((port) => {
-            if (port.extras.value >= controller?.extras.analogPorts) {
+            if (port.data.extras.value >= controller?.data.extras.analogPorts) {
                 warn(
                     `This ${port.name} does not exist on this micro - controller`,
                     port
@@ -189,7 +186,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     function warnAboutMultipleUsePorts(nodes: any) {
         nodes
-            .filter((node: any) => paramTypes.includes(node.extras.type))
+            .filter((node: any) => paramTypes.includes(node.data.extras.type))
             .forEach((node: any) => {
                 node.ports.forEach((port: any) => {
                     // console.log("checking ", port);
@@ -286,16 +283,16 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     function addHeaderComments() {
         add("/* Code generated for ", controller?.name);
-        const uniqueDigitals = [...new Set(usedDigital.map((u) => u.extras.value))];
-        const uniqueAnalogs = [...new Set(usedAnalog.map((u) => u.extras.value))];
+        const uniqueDigitals = [...new Set(usedDigital.map((u) => u.data.extras.value))];
+        const uniqueAnalogs = [...new Set(usedAnalog.map((u) => u.data.extras.value))];
 
         add(
-            `Analog ports ${uniqueAnalogs.length} /${controller?.extras.analogPorts
+            `Analog ports ${uniqueAnalogs.length} /${controller?.data.extras.analogPorts
             } ${usedAnalog.length > 0 ? `(${uniqueAnalogs.map((port) => port)})` : ""
             } `
         );
         add(
-            `Digital ports ${uniqueDigitals.length}/${controller?.extras.digitalPorts
+            `Digital ports ${uniqueDigitals.length}/${controller?.data.extras.digitalPorts
             } ${usedDigital.length > 0 ? `(${uniqueDigitals.map((port) => port)})` : ""
             }`,
             "    */"
@@ -372,11 +369,11 @@ function generateCode(model: any): { code: string; problems: any[] } {
             const received: any[] = [];
 
             params.forEach((p: any) => {
-                if (paramTypes.includes(p.extras.type)) {
+                if (paramTypes.includes(p.data.extras.type)) {
                     received.push(
-                        ...p.extras.value
+                        ...p.data.extras.value
                             .split(",")
-                            .map((m: any) => p.extras.returnType + " " + m)
+                            .map((m: any) => p.data.extras.returnType + " " + m)
                     );
                 }
             });
@@ -427,9 +424,9 @@ function generateCode(model: any): { code: string; problems: any[] } {
                 let variableParams = formattedParameters(params);
 
                 // variableParams = variableParams.split(',')
-                // console.log('adding', node.extras.name, variableParams)
-                add(node.extras.name + " = " + variableParams);
-            } else if (node.extras.type === "built-in") {
+                // console.log('adding', node.data.extras.name, variableParams)
+                add(node.data.extras.name + " = " + variableParams);
+            } else if (node.data.extras.type === "built-in") {
                 add(
                     port.name.substring(
                         port.name.indexOf(" ") + 1,
@@ -440,9 +437,9 @@ function generateCode(model: any): { code: string; problems: any[] } {
                     ")" +
                     ";"
                 );
-            } else if (node.extras.type === "logic") {
+            } else if (node.data.extras.type === "logic") {
                 if (node.name === "Function") {
-                    add(node.extras.value + "()");
+                    add(node.data.extras.value + "()");
                 } else if (node.name === "Condition") {
                     const xValue = getCoditionalValue(node, "void set(T xValue)");
                     const yValue = getCoditionalValue(node, "void set(T yValue)");
@@ -453,7 +450,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
                     const outcomePort3 = getOutcome(node, "else");
                     const toNode3 = getParent(outcomePort3);
 
-                    add("if (", xValue, " " + node.extras.value + " ", yValue, ") {");
+                    add("if (", xValue, " " + node.data.extras.value + " ", yValue, ") {");
                     if (toNode2) {
                         outcomePort2.edges.forEach((l: any) => {
                             processLink(l);
@@ -471,7 +468,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
                     add("}\n");
                 } else {
                     console.log("almost confused", node);
-                    add(node.extras.value);
+                    add(node.data.extras.value);
                 }
             } else {
                 console.log("confusion at ", port, node, fromNode);
@@ -479,10 +476,10 @@ function generateCode(model: any): { code: string; problems: any[] } {
                 // warn('Loose connection', [fromNode]);
             }
             // try {
-            //     if (node.extras.type === 'constant') {
-            //         contents.push(node.extras.name);
+            //     if (node.data.extras.type === 'constant') {
+            //         contents.push(node.data.extras.name);
             //     } else {
-            //         contents.push(node.extras.value);
+            //         contents.push(node.data.extras.value);
             //     }
             // } catch (error) {
             //     console.log('error, no parameter?');
@@ -516,12 +513,12 @@ function generateCode(model: any): { code: string; problems: any[] } {
                 let port = getPort(edge.source, edge.sourcePort);
                 let parent = getParent(port);
 
-                if (paramTypes.includes(parent.extras.type)) {
-                    return parent.extras.value;
-                } else if (["component"].includes(parent.extras.type)) {
+                if (paramTypes.includes(parent.data.extras.type)) {
+                    return parent.data.extras.value;
+                } else if (["component"].includes(parent.data.extras.type)) {
                     return parent.instance + "." + port.name;
                 } else {
-                    return add("/* Unknown extras.type */");
+                    return add("/* Unknown data.extras.type */");
                 }
             } catch (error) {
                 return "/* Lacking Value */";
@@ -578,7 +575,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         // if (toNode?.extras?.type === 'built-in') {
         //     add(toPort.name + '()');
         // } else if (toNode?.name === "Function") {
-        //     add(toNode.extras.value, '(', ');');
+        //     add(toNode.data.extras.value, '(', ');');
         // } else if (toNode?.name === "Condition") {
 
         // }
@@ -616,7 +613,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     const constants: any[] = nodes
         .filter((node) => node.extras?.type === "constant")
         .map((constant) => {
-            constant.extras.name = constant.extras.name.toUpperCase();
+            constant.data.extras.name = constant.data.extras.name.toUpperCase();
             return constant;
         });
     const variables: any[] = nodes.filter(
