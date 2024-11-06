@@ -13,7 +13,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 
 //import { processDynamic } from "./goBuilder"; // esse cara monta a representação 
 import React from "react";
-
+import { getConnectedEdges } from '@xyflow/svelte';
 import Flow, * as flow from "../../Flow.svelte";
 import { get } from "http";
 
@@ -157,11 +157,13 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function warnAboutNodesWithoutLinks(nodes: any) {
         nodes.forEach((node: any) => {
             let hasLink = false;
-            node.ports.forEach((port: any) => {
-                if (port.links.length > 0) {
-                    hasLink = true;
-                }
-            });
+            /*
+                        const incomers = getOutgoers(
+                            node,
+                            nodes,
+                            edges,
+                          );
+            */
             if (!hasLink) {
                 warn("This component has no links", node);
             }
@@ -238,14 +240,14 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
     function getLinksFromModel(model: any) {
         const temp: any[] = [];
-        Object.entries(model.layers[0].models).forEach((link: any) => {
+        Object.entries(model.edges).forEach((link: any) => {
             temp.push(link[1]);
         });
         return temp;
     }
     function getNodesFromModel(model: any) {
         const temp: any[] = [];
-        Object.entries(model.layers[1].models).forEach((node: any) => {
+        Object.entries(model.nodes).forEach((node: any) => {
             temp.push(node[1]);
         });
         return temp;
@@ -648,7 +650,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     return { code: indentCode(code), problems };
 }
 export default function Code(props: { model: string }) {
-    // console.log('CodeComponent render')
+    console.log('CodeComponent render', props.model)
 
     const model = props.model;
     let code = "";
@@ -663,6 +665,7 @@ export default function Code(props: { model: string }) {
             return index === self.findIndex((p) => p.message === problem.message);
         });
     }
+    console.log("code", code);
 
     useEffect(() => {
         Prism.highlightAll();
