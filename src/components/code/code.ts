@@ -250,18 +250,18 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function getComponentsFromNodes(nodes: any) {
         let temp: any[] = [];
         nodes
-            .filter((node: any) => node.extras?.type === "component")
+            .filter((node: any) => node.data.extras?.type === "component")
             .forEach((node: any) => {
                 node.instance =
                     node.name.toLowerCase().replace(" ", "") +
-                    temp.filter((t) => t.extras?.library === node.extras?.library).length;
+                    temp.filter((t) => t.data.extras?.library === node.data.extras?.library).length;
                 temp.push(node);
             });
         return temp;
     }
     function warnAboutNumberOfControllers() {
         const controllers: any[] = nodes.filter(
-            (node) => node.extras?.type === "controller"
+            (node) => node.data.extras?.type === "controller"
         );
         if (controllers.length === 0) {
             warn("No micro-controller");
@@ -336,11 +336,13 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function addLifecycleMethods() {
         add("");
         add(`// Micro-controller's Lifecycle`);
-        controller?.ports.forEach((port: any) => {
-            add("void ", port.label, "{");
-            port.edges.forEach((l: any) => {
-                processLink(l);
-            });
+        controller?.data.handles.forEach((handle: any) => {
+            add("void ", handle.edge, "{");
+            // handle.edges.forEach((l: any) => {
+            //    processLink(l);
+            // });
+
+            //todo fix this
             add("}\n");
         });
     }
@@ -385,7 +387,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
             expected.forEach((ex: any, index: number) => {
                 const expectedType =
                     returnTypes.find((rt: any) => ex.trim().startsWith(rt)) ||
-                    node.extras?.returnType;
+                    node.data.extras?.returnType;
                 const re = received[index];
 
                 if (ex.includes("=") && !re) {
@@ -492,7 +494,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
             //             if (toNode.instance) {
             //                 add(toNode.instance + '.' + toPort.name.split("(").shift() + '(' + contents + ');');
             //             }
-            //         } else if (toNode?.extras?.type === 'built-in') {
+            //         } else if (toNode?.data.extras?.type === 'built-in') {
             //             add(toPort.name.split("(").shift() + '(' + contents + ');');
             //         } else if (!toNode?.instance) { //points to another variable/port
             //             callWithParameters(toNode, ...extrass);
@@ -548,7 +550,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         ): { toPort: any; params: any[] } {
             const toNode = getNode(toPort.parentNode);
 
-            if (paramTypes.includes(toNode?.extras?.type)) {
+            if (paramTypes.includes(toNode?.data.extras?.type)) {
                 params.push(toNode);
 
                 let nextFromPort = getOutPort(toPort);
@@ -559,7 +561,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
                 if (!nextToPort) return { toPort: undefined, params };
                 let nextToNode = getNode(nextToPort.parentNode);
 
-                if (paramTypes.includes(nextToNode?.extras?.type)) {
+                if (paramTypes.includes(nextToNode?.data.extras?.type)) {
                     return resolveTarget(nextToPort, params);
                 }
                 return { toPort: nextToPort, params };
@@ -570,7 +572,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         const target: any = resolveTarget(toPort, params);
         if (target.toPort) callWithParameters(target.toPort, target.params);
 
-        // if (toNode?.extras?.type === 'built-in') {
+        // if (toNode?.data.extras?.type === 'built-in') {
         //     add(toPort.name + '()');
         // } else if (toNode?.name === "Function") {
         //     add(toNode.data.extras.value, '(', ');');
@@ -605,26 +607,26 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
     const edges: any[] = getEdgesFromModel(model);
     const nodes: any[] = getNodesFromModel(model);
-    const logics: any[] = nodes.filter((node) => node.extras?.type === "logic");
+    const logics: any[] = nodes.filter((node) => node.data.extras?.type === "logic");
     const components: any[] = getComponentsFromNodes(nodes);
-    const controller = nodes.find((node) => node.extras?.type === "controller");
+    const controller = nodes.find((node) => node.data.extras?.type === "controller");
     const constants: any[] = nodes
-        .filter((node) => node.extras?.type === "constant")
+        .filter((node) => node.data.extras?.type === "constant")
         .map((constant) => {
             constant.data.extras.name = constant.data.extras.name.toUpperCase();
             return constant;
         });
     const variables: any[] = nodes.filter(
-        (node) => node.extras?.type === "variable"
+        (node) => node.data.extras?.type === "variable"
     );
 
     console.log('varrrr', variables)
 
     const usedDigital: any[] = [
-        ...new Set(nodes.filter((node) => node.extras?.portType === "Digital")),
+        ...new Set(nodes.filter((node) => node.data.extras?.portType === "Digital")),
     ];
     const usedAnalog: any[] = [
-        ...new Set(nodes.filter((node) => node.extras?.portType === "Analog")),
+        ...new Set(nodes.filter((node) => node.data.extras?.portType === "Analog")),
     ];
     // #endregion
 
