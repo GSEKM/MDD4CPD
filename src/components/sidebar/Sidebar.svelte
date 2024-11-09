@@ -25,7 +25,7 @@
         {#each types as type}
             <div class="type-label">{type}</div>
             <div
-                style="background-color: white; border: 2px solid black; padding: 3px"
+                style="background-color: white; border: 2px solid black; padding: 2px"
             >
                 {#each nodes as node}
                     {#if node.extras.type == type}
