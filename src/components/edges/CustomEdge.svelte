@@ -16,7 +16,6 @@
   export let targetPosition: $$Props["targetPosition"];
   export let data: $$Props["data"] = {
     label: "test",
-
   };
 
   $: [edgePath, labelX, labelY] = getBezierPath({
@@ -35,7 +34,7 @@
     style:transform="translate(-50%, -50%) translate({labelX}px,{labelY}px)"
     class="edge-label nodrag nopan"
   >
-    <button class="close-button" >
+    <button class="close-button">
       <i class="fas fa-cog"></i>
     </button>
   </div>
@@ -48,23 +47,23 @@
   .close-button {
     width: 12px;
     height: 12px;
-    background-color: red; 
-    border-radius: 50%; 
-    color: white; 
+    background-color: red;
+    border-radius: 50%;
+    color: white;
     font-size: 8px;
-    cursor: pointer; 
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
-    transition: background-color 0.3s; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
     display: flex;
     justify-content: center;
     align-items: center;
   }
 
   .close-button:hover {
-    background-color: #a19d9d; 
+    background-color: #a19d9d;
   }
 
   .close-button:focus {
-    outline: none; 
+    outline: none;
   }
 </style>
