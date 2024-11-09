@@ -15,10 +15,8 @@
         }
     };
 
-    const types = Array.from(
-        new Set(nodes.map((node: any) => node.extras.type)),
-    );
-    console.log(types);
+  const types = Array.from(new Set(nodes.map((node: any) => node.extras.type)));
+  console.log(types);
 </script>
 
 <aside>

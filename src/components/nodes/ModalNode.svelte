@@ -8,7 +8,6 @@
   } from "@xyflow/svelte";
   import { writable } from "svelte/store";
   import { edges } from "../code/store";
-
   //Defining the props
   type $$Props = NodeProps;
 
@@ -24,7 +23,7 @@
   let methodsEnd = data.methodsEnd || [];
 
   const arduinoCode = writable(generateArduinoCode());
-  let parametersInput = data?.parametersInput || "";
+  let parametersInput = data?.inputParameterName || "";
 
   function generateArduinoCode() {
     let code = "";

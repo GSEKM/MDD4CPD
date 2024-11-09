@@ -197,20 +197,6 @@
         ]
     },
     {
-        "name": "Arduino Uno",
-        "color": "green",
-        "highlighted": true,
-        "extras": {
-            "type": "controller",
-            "analogPorts": 6,
-            "digitalPorts": 14
-        },
-        "outs": [
-            "setup()",
-            "loop()"
-        ]
-    },
-    {
         "name": "Arduino Nano",
         "color": "green",
         "extras": {
@@ -260,38 +246,6 @@
         "outs": [
             "setup()",
             "loop()"
-        ]
-    },
-    {
-        "name": "Port",
-        "color": "pink",
-        "extras": {
-            "value": "0",
-            "group": "value",
-            "type": "port",
-            "hasUsages": true,
-            "hasPortType": true,
-            "portType": "Digital",
-            "returnType": "int",
-            "selectableOptions": [
-                "0",
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9"
-            ],
-            "hasValue": true
-        },
-        "ins": [
-            "in"
-        ],
-        "outs": [
-            "out"
         ]
     },
     {
@@ -355,24 +309,6 @@
         ]
     },
     {
-        "name": "Function",
-        "extras": {
-            "type": "logic",
-            "returnType": "void",
-            "value": "foo",
-            "hasUsages": true,
-            "hasValue": true
-        },
-        "color": "grey",
-        "outs": [
-            "body"
-        ],
-        "ins": [
-            "declare",
-            "in"
-        ]
-    },
-    {
         "name": "Condition",
         "extras": {
             "type": "logic",
@@ -422,19 +358,6 @@
         "ins": [
             "startValue",
             "stopValue"
-        ]
-    },
-    {
-        "name": "Digital I/O",
-        "color": "cyan",
-        "highlighted": true,
-        "extras": {
-            "type": "built-in"
-        },
-        "methods": [
-            "void digitalWrite(int pin, int value)",
-            "void pinMode(int pin, int mode)",
-            "int digitalRead(int pin)"
         ]
     },
     {
@@ -561,22 +484,6 @@
             "void setTimeout(long time)",
             "size_t write(byte val)",
             "void serialEvent()"
-        ]
-    },
-    {
-        "name": "true",
-        "color": "cyan",
-        "extras": {
-            "type": "built-in-constant",
-            "returnType": "int",
-            "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
-        },
-        "ins": [
-            "in"
-        ],
-        "outs": [
-            "out"
         ]
     },
     {
