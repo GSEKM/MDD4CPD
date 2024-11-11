@@ -190,6 +190,7 @@
         class="save-button"
         on:click={() => {
             generateCode(getRepresentation());
+            console.log("getRepresentation", getRepresentation());
         }}>Salvar</button
     >
     <SvelteFlow

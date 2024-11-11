@@ -51,6 +51,7 @@ const paramTypes = [
 ];
 
 function generateCode(model: any): { code: string; problems: any[] } {
+    console.log(model);
     // #region Reviewed Functions
     function addConstantDeclarations(constants: any) {
         if (constants.length > 0) {
@@ -67,20 +68,22 @@ function generateCode(model: any): { code: string; problems: any[] } {
             });
         }
     }
-    function addVariableDeclarations(variables: any) {
-        if (variables.length > 0) {
+    function addVariableDeclarations(nodes: any) {
+        if (nodes.length > 0) {
             add("");
             add("// Variables");
-            variables.forEach((variable: any) => {
-                let params = variable.data.extras.value.split(",");
+            // changed the method so it sees variables the right way and adpted the code so it declares the variable inside the method
+            nodes.forEach((nodes: any) => {
+                let params = nodes.data.extras.variables.split(",");
+                let method = nodes.data.extras.declarationLocal;
                 const isArray = params.length > 1;
                 const count = isArray ? "[" + params.length + "]" : "";
                 params = isArray ? "{" + params.map((x: any) => x) + "}" : params;
 
                 const equals = params[0] !== "" ? "=" : "";
-                add(
-                    `${variable.data.extras.returnType} ${variable.data.extras.name}${count} ${equals} ${params}; `
-                );
+                add(`${method} {\n ${nodes.data.extras.declarationLocal == method ? `${params} ${count}= ${nodes.data.extras.variables} ;\n` : ""}`);
+                add(`}\n`);
+
             });
         }
     }
@@ -184,7 +187,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     function warnAboutMultipleUsePorts(nodes: any) {
         nodes
-            .filter((node: any) => paramTypes.includes(node.data.extras.type))
+            .filter((node: any) => paramTypes.includes(node.data.selectedType))
             .forEach((node: any) => {
                 node.ports.forEach((port: any) => {
                     // console.log("checking ", port);
@@ -338,11 +341,11 @@ function generateCode(model: any): { code: string; problems: any[] } {
         add(`// Micro-controller's Lifecycle`);
         controller?.data.handles.forEach((handle: any) => {
             add("void ", handle.edge, "{");
-            // handle.edges.forEach((l: any) => {
-            //    processLink(l);
-            // });
+            edges.forEach((l: any) => {
+                processLink(l);
+            });
 
-            //todo fix this
+
             add("}\n");
         });
     }
@@ -641,7 +644,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     addLibraries();
     addFunctionDeclarations(logics.filter((l) => l.name === "Function"));
     addConstantDeclarations(constants);
-    addVariableDeclarations(variables);
+    addVariableDeclarations(nodes);
     addLifecycleMethods();
     // #endregion
     return { code: indentCode(code), problems };
