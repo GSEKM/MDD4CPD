@@ -74,14 +74,14 @@ function generateCode(model: any): { code: string; problems: any[] } {
             add("// Variables");
             // changed the method so it sees variables the right way and adpted the code so it declares the variable inside the method
             nodes.forEach((nodes: any) => {
-                let params = nodes.data.extras.variables.split(",");
-                let method = nodes.data.extras.declarationLocal;
+                let params = controller.data.extras.variables?.split(",");
+                let method = controller.data.extras.declarationLocal;
                 const isArray = params.length > 1;
                 const count = isArray ? "[" + params.length + "]" : "";
                 params = isArray ? "{" + params.map((x: any) => x) + "}" : params;
 
                 const equals = params[0] !== "" ? "=" : "";
-                add(`${method} {\n ${nodes.data.extras.declarationLocal == method ? `${params} ${count}= ${nodes.data.extras.variables} ;\n` : ""}`);
+                add(`${method} {\n ${nodes.data.extras.declarationLocal == method ? `${params} ${count}= ${nodes.data.extras.parameters} ;\n` : ""}`);
                 add(`}\n`);
 
             });
@@ -126,15 +126,15 @@ function generateCode(model: any): { code: string; problems: any[] } {
             });
         }
     }
-    function formattedParameters(params: any) {
-        return params.map((par: any) => {
+    function formattedParameters(nodes: any) {
+        return nodes.data.extra.variables.map((par: any) => {
             switch (par.data.extras.type) {
                 case "parameter":
                 case "port":
-                    return par.data.extras.value;
+                    return par.data.extras.parameters;
                 case "constant":
                 case "variable":
-                    return par.data.extras.name;
+                    return par.data.extras.variables;
                 case "built-in-constant":
                     return par.name;
                 default:
@@ -236,11 +236,12 @@ function generateCode(model: any): { code: string; problems: any[] } {
         return "ok";
     }
 
-    function getEdgesFromModel(model: any) {
+    function getEdgesFromModel(nodes: any) {
         const temp: any[] = [];
-        Object.entries(model.edges).forEach((edge: any) => {
+        Object.entries(nodes.edges).forEach((edge: any) => {
             temp.push(edge[1]);
         });
+        console.log("edges", temp);
         return temp;
     }
     function getNodesFromModel(model: any) {
@@ -253,7 +254,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function getComponentsFromNodes(nodes: any) {
         let temp: any[] = [];
         nodes
-            .filter((node: any) => node.data.extras?.type === "component")
+            .filter((node: any) => node.data.extras?.type === "custom")
             .forEach((node: any) => {
                 node.instance =
                     node.name.toLowerCase().replace(" ", "") +
@@ -300,6 +301,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         );
     }
     function getLink(edgeID: string) {
+
         return edges.find((l) => l.id === edgeID);
     }
     function getPort(nodeID: string, portID: string) {
@@ -351,7 +353,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     // #endregion
 
-    // #region Unreviewed Functions
+    // #region Unreviewed Functions 
     function processLink(l: any) {
         function callWithParameters(port: any, params: any) {
             const node = getNode(port.parentNode);
@@ -476,44 +478,19 @@ function generateCode(model: any): { code: string; problems: any[] } {
             } else {
                 console.log("confusion at ", port, node, fromNode);
                 add("confusion");
-                // warn('Loose connection', [fromNode]);
             }
-            // try {
-            //     if (node.data.extras.type === 'constant') {
-            //         contents.push(node.data.extras.name);
-            //     } else {
-            //         contents.push(node.data.extras.value);
-            //     }
-            // } catch (error) {
-            //     console.log('error, no parameter?');
-            // }
-            // node.ports.forEach((port: any) => {
-            //     port.edges.forEach((l: any) => {
-            //         const edge = getLink(l);
-            //         const toPort = getPort(edge.target, edge.targetPort);
-            //         const toNode = getNode(toPort?.parentNode);
-            //         if (!toNode) {
-            //         } else if (toNode?.id === node?.id) { //skip as it is the previous edge
-            //             if (toNode.instance) {
-            //                 add(toNode.instance + '.' + toPort.name.split("(").shift() + '(' + contents + ');');
-            //             }
-            //         } else if (toNode?.data.extras?.type === 'built-in') {
-            //             add(toPort.name.split("(").shift() + '(' + contents + ');');
-            //         } else if (!toNode?.instance) { //points to another variable/port
-            //             callWithParameters(toNode, ...extrass);
-            //         } else { //points to a class instance, we hope it is a method call
-            //             //todo: check for parameter type and numbers
-            //             add(toNode.instance + '.' + (toPort.name.split("(").shift()) + '(' + contents + ');');
-            //         }
-            //     });
-            // });
         }
+        // to do fix here
         function getCoditionalValue(conditionNode: any, portName: any): string {
             try {
+                // just get the id from node.data.edges.id
                 let edgeID = conditionNode.ports.find((p: any) => p.name === portName)
                     .edges[0];
+                // fix getLink
                 let edge = getLink(edgeID);
+                // fix getPort
                 let port = getPort(edge.source, edge.sourcePort);
+                //fix getParent
                 let parent = getParent(port);
 
                 if (paramTypes.includes(parent.data.extras.type)) {
@@ -608,8 +585,9 @@ function generateCode(model: any): { code: string; problems: any[] } {
     let code = "";
     const problems: any[] = [];
 
-    const edges: any[] = getEdgesFromModel(model);
+
     const nodes: any[] = getNodesFromModel(model);
+    const edges: any[] = getEdgesFromModel(model);
     const logics: any[] = nodes.filter((node) => node.data.extras?.type === "logic");
     const components: any[] = getComponentsFromNodes(nodes);
     const controller = nodes.find((node) => node.data.extras?.type === "controller");
