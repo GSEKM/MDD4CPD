@@ -34,6 +34,7 @@
     "src/**/*.js",
     "src/**/*.svelte",
     "src/**/*.tsx",
-    "src/components/code/code.ts"
+    "src/components/code/code.ts",
+    "src/components/code/GoClass.ts"
   ],
 }
