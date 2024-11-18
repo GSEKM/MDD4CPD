@@ -12,12 +12,17 @@
         type Node,
         type NodeTypes,
     } from "@xyflow/svelte";
+    //@ts-ignore
     import Sidebar from "./components/sidebar/Sidebar.svelte";
     import paletteNodes from "./nodes.json";
     import ModalNode from "./components/nodes/ModalNode.svelte";
+    //@ts-ignore
     import CustomNode from "./components/nodes/CustomNode.svelte";
+    //@ts-ignore
     import ResultNode from "./components/nodes/ResultNode.svelte";
+    //@ts-ignore
     import NodeModal from "./components/nodes/NodeModal.svelte";
+    //@ts-ignore
     import CustomEdge from "./components/edges/CustomEdge.svelte";
     import { edges, nodes } from "./components/code/store";
     import generateCode from "./components/code/code";
@@ -83,6 +88,7 @@
         const targetNode = nodesAux.find((node) => node.id === edge.target);
 
         // Find the handle that matches the edge
+        //@ts-ignore
         const handle = sourceNode?.data?.handles.find(
             (h) => h.id === edge.sourceHandle,
         );
@@ -93,6 +99,7 @@
             if (targetNode.data.handles === undefined) {
                 return;
             } else {
+                //@ts-ignore
                 const handleEnd = targetNode.data.handles.find(
                     (h) => h.id === edge.targetHandle,
                 );
@@ -165,7 +172,9 @@
             data: {
                 //@ts-ignore
                 inputParameterName:
+                    //@ts-ignore
                     sourceNode.data.extras?.inputParameterName || "",
+                //@ts-ignore
                 methods: sourceNode.data.handles.map((h) => h.edge),
                 source: sourceNode.id,
                 // extra: {

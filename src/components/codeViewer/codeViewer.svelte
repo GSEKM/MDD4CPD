@@ -36,7 +36,6 @@
         left: 0;
         height: 100vh;
         width: 50vw;
-        background-color: #282a36;
     }
 
     .problems {
