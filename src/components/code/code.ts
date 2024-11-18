@@ -51,7 +51,6 @@ const paramTypes = [
 ];
 
 function generateCode(model: any): { code: string; problems: any[] } {
-    console.log(model);
     // #region Reviewed Functions
     function addConstantDeclarations(constants: any) {
         if (constants.length > 0) {
@@ -514,6 +513,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
     // #region Generator Lifecycle
     console.log("----- Starting Code Generation -----");
+    //to fo fix all warnings and header comments
     addHeaderComments();
     warnAboutNumberOfControllers();
     warnAboutPortUsage();
@@ -528,8 +528,8 @@ function generateCode(model: any): { code: string; problems: any[] } {
     // #endregion
     return { code: indentCode(code), problems };
 }
-export default function Code(props: { model: string }) {
-    console.log('CodeComponent render', props.model)
+export default function Code(props: { model: string }): { code: string; problems: any[] } {
+    console.log('CodeComponent render', props.model);
 
     const model = props.model;
     let code = "";
@@ -537,6 +537,7 @@ export default function Code(props: { model: string }) {
     let uniqueProblems: any[] = [];
 
     if (model === "{}" || model === "") {
+        return { code: "", problems: [] };
     } else {
         ({ code, problems } = generateCode(JSON.parse(model)));
 
@@ -544,6 +545,9 @@ export default function Code(props: { model: string }) {
             return index === self.findIndex((p) => p.message === problem.message);
         });
     }
+
     console.log("code", code);
 
+    // Retornar o resultado
+    return { code, problems };
 }

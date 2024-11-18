@@ -21,7 +21,8 @@
     import CustomEdge from "./components/edges/CustomEdge.svelte";
     import { edges, nodes } from "./components/code/store";
     import generateCode from "./components/code/code";
-
+    import Code from "./components/code/code";
+    import CodeViewer from "./components/codeViewer/codeViewer.svelte";
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
         useSvelteFlow();
@@ -183,16 +184,22 @@
         const representation = toObject();
         return { model: JSON.stringify(representation) };
     }
+
+    // Stores reativas para `code` e `problems`
+    export const code = writable("");
+    export const problems = writable([]);
+
+    const onSaveClick = () => {
+        const result = generateCode(getRepresentation());
+        if (result) {
+            code.set(result.code);
+            problems.set(result.problems);
+        }
+    };
 </script>
 
 <main>
-    <button
-        class="save-button"
-        on:click={() => {
-            generateCode(getRepresentation());
-            console.log("getRepresentation", getRepresentation());
-        }}>Salvar</button
-    >
+    <Sidebar nodes={paletteNodes} />
     <SvelteFlow
         {nodes}
         {edges}
@@ -209,7 +216,8 @@
 
         <MiniMap pannable zoomable />
     </SvelteFlow>
-    <Sidebar nodes={paletteNodes} />
+    <button class="save-button" on:click={onSaveClick}>Salvar</button>
+    <CodeViewer code={$code} problems={$problems} />
 </main>
 
 <style>
