@@ -51,6 +51,7 @@ const paramTypes = [
 ];
 
 function generateCode(model: any): { code: string; problems: any[] } {
+    console.log("model", model);
     // #region Reviewed Functions
     function addConstantDeclarations(constants: any) {
         if (constants.length > 0) {
@@ -225,9 +226,9 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     function warnAboutLooseEdges(edges: any) {
         edges.forEach((edge: any) => {
-            const fromPort = getPort(edge.source, edge.sourcePort);
-            const fromNode = getNode(fromPort?.parentNode);
-            const toPort = getPort(edge.target, edge.targetPort);
+            const fromPort = getPort(edge.source, edge.sourceHandle);
+            const fromNode = getNode(fromPort?.source);
+            const toPort = getPort(edge.target, edge.targetHandle);
             if (!toPort) {
                 warn("Loose edge", fromNode);
             }
@@ -326,7 +327,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         try {
             return nodes
                 .find((n: any) => n.id === nodeID)
-                .ports.find((p: any) => p.id === portID);
+                .data.handles.find((p: any) => p.id === portID);
         } catch (error) {
             return null;
         }
