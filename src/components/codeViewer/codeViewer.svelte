@@ -1,16 +1,7 @@
 <script lang="ts">
     export let code: string = "";
     export let problems: any[] = [];
-    export let onSaveClick: () => void; // Recebe a função de salvar como prop
-    import { onMount } from "svelte";
-    import Prism from "prismjs";
-    import "prismjs/themes/prism.css";
-    import "prismjs/components/prism-clike";
-
-    // Realçar o código usando Prism
-    onMount(() => {
-        Prism.highlightAll();
-    });
+    export let onSaveClick: () => void;
 </script>
 
 <div class="code-viewer">
@@ -46,13 +37,15 @@
         overflow: hidden;
         padding: 1em;
         box-sizing: border-box;
-        background-color: #282a36;
+        background-color: #1d1c1c;
         color: #f8f8f2;
         position: relative;
     }
 
     .problems {
         color: #ff5555;
+        border-width: 2px;
+        border-color: #ff5555;
         margin-bottom: 1em;
         width: 100%;
         justify-items: center;
@@ -74,13 +67,21 @@
         margin: 0;
         border-radius: 5px;
         overflow: auto;
-
+        background-color: #2d2d2d;
         color: #f8f8f2;
     }
 
+    code {
+        font-family: "Fira Code", "Courier New", Courier, monospace;
+        font-size: 1em;
+        line-height: 1.5;
+        color: #f8f8f2;
+        white-space: pre-wrap;
+    }
+
     .save-button {
-        background-color: #f8f8f2;
-        color: #282a36;
+        background-color: #1d1c1c;
+        color: #fff;
         border: none;
         padding: 0.5em 1em;
         border-radius: 5px;
@@ -91,9 +92,10 @@
         bottom: 1em;
         left: 50%;
         transform: translateX(-50%);
+        margin-bottom: 1rem;
     }
 
     .save-button:hover {
-        background-color: #e6e6e6;
+        background-color: #292929;
     }
 </style>
