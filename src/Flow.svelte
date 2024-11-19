@@ -225,8 +225,7 @@
 
         <MiniMap pannable zoomable />
     </SvelteFlow>
-    <button class="save-button" on:click={onSaveClick}>Salvar</button>
-    <CodeViewer code={$code} problems={$problems} />
+    <CodeViewer code={$code} problems={$problems} {onSaveClick} />
 </main>
 
 <style>
