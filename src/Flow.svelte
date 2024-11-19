@@ -8,6 +8,8 @@
         BackgroundVariant,
         MiniMap,
         useSvelteFlow,
+        Panel,
+        type ColorMode,
         type Edge,
         type Node,
         type NodeTypes,
@@ -158,37 +160,6 @@
         updateNode(edge.source, { position: sourceNode.position });
     };
 
-    // Node click handler
-    export const createNodeModal = (event: CustomEvent<{ node: Node }>) => {
-        const nodeId = event.detail.node.id;
-        const nodesAux: Node[] = getNodes();
-        const sourceNode = nodesAux.find((node) => node.id === nodeId);
-        if (sourceNode.type === "config" || sourceNode.type === "modal") return;
-        if (!sourceNode) return;
-
-        const newNode: Node = {
-            id: `${modalNodeId++}`,
-            type: "config",
-            data: {
-                //@ts-ignore
-                inputParameterName:
-                    //@ts-ignore
-                    sourceNode.data.extras?.inputParameterName || "",
-                //@ts-ignore
-                methods: sourceNode.data.handles.map((h) => h.edge),
-                source: sourceNode.id,
-                // extra: {
-                // },
-            },
-            position: {
-                x: sourceNode.position.x - 130,
-                y: sourceNode.position.y - 290,
-            },
-        };
-
-        nodes.update((n) => [...n, newNode]);
-    };
-
     export function getRepresentation() {
         const representation = toObject();
         return { model: JSON.stringify(representation) };
@@ -205,6 +176,8 @@
             problems.set(result.problems);
         }
     };
+
+    let colorMode: ColorMode = "dark";
 </script>
 
 <main>
@@ -214,15 +187,14 @@
         {edges}
         {nodeTypes}
         {edgeTypes}
+        {colorMode}
         defaultEdgeOptions={{ type: "customEdge" }}
         on:dragover={onDragOver}
         on:drop={onDrop}
         on:edgeclick={onEdgeClick}
-        on:nodeclick={(e) => createNodeModal(e)}
     >
         <Controls />
         <Background variant={BackgroundVariant.Dots} />
-
         <MiniMap pannable zoomable />
     </SvelteFlow>
     <CodeViewer code={$code} problems={$problems} {onSaveClick} />
