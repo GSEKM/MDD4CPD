@@ -83,11 +83,6 @@
       }
     }
     if (typeOfDeclaration == "methods") {
-      console.log(
-        selectedRetunType,
-        inputMethodName,
-        methodDeclarationLocation,
-      );
       if (methodDeclarationLocation == "global") {
         codev += `${selectedRetunType} ${inputMethodName}();\n`;
       }
@@ -119,6 +114,7 @@
     (sourceNode.data.extras.variables =
       selectedType + " " + inputParameterName),
       (sourceNode.data.extras.parameters = inputParameterContent);
+    sourceNode.data.extras.declarationLocal = declarationLocation;
 
     updateNodeData(sourceNode.id, sourceNode.data);
     updateNodeData(id, {

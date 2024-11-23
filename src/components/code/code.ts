@@ -67,23 +67,34 @@ function generateCode(model: any): { code: string; problems: any[] } {
             });
         }
     }
-    function addVariableDeclarations(variables: any) {
-        if (variables.length > 0) {
+    function addVariableDeclarations(nodes: any) {
+        if (nodes.length > 0) {
             add("");
             add("// Variables");
-            variables.forEach((variable: any) => {
-                let params = variable.data.extras.value.split(",");
-                const isArray = params.length > 1;
-                const count = isArray ? "[" + params.length + "]" : "";
-                params = isArray ? "{" + params.map((x: any) => x) + "}" : params;
 
-                const equals = params[0] !== "" ? "=" : "";
-                add(
-                    `${variable.data.extras.returnType} ${variable.data.extras.name}${count} ${equals} ${params}; `
-                );
+            const declaredVariables = new Set();
+            const lifecycleMethods = controller?.data.handles.map((handle: any) => handle.edge) || [];
+
+            nodes.forEach((node: any) => {
+                const params = node.data.extras.variables?.split(",") || [];
+                const declarationLocal = node.data.extras?.declarationLocal;
+                const isArray = params.length > 1;
+                const count = isArray ? `[${params.length}]` : "";
+                const formattedParams = isArray ? `{${params.join(", ")}}` : params.join(", ");
+                const equals = formattedParams ? "=" : "";
+
+                // Verificar se o local de declaração corresponde a um método de ciclo de vida
+                if (lifecycleMethods.includes(declarationLocal) && !declaredVariables.has(`${declarationLocal}:${formattedParams}`)) {
+                    declaredVariables.add(`${declarationLocal}:${formattedParams}`);
+
+                    // Adicionar a declaração de variáveis no método correspondente
+                    add(`${formattedParams} ${count} ${equals} ${node.data.extras.parameters};`);
+                }
             });
         }
     }
+
+
     function addFunctionDeclarations(functions: any) {
         if (functions.length > 0) {
             add("// Functions");
@@ -123,15 +134,15 @@ function generateCode(model: any): { code: string; problems: any[] } {
             });
         }
     }
-    function formattedParameters(params: any) {
-        return params.map((par: any) => {
+    function formattedParameters(nodes: any) {
+        return nodes.data.extra.variables.map((par: any) => {
             switch (par.data.extras.type) {
                 case "parameter":
                 case "port":
-                    return par.data.extras.value;
+                    return par.data.extras.parameters;
                 case "constant":
                 case "variable":
-                    return par.data.extras.name;
+                    return par.data.extras.variables;
                 case "built-in-constant":
                     return par.name;
                 default:
@@ -140,20 +151,30 @@ function generateCode(model: any): { code: string; problems: any[] } {
         });
     }
     function indentCode(original: string) {
-        let code: any[] = [];
+        let code: string[] = [];
         let level = 0;
         let tab = "    ";
+
         original.split("\n").forEach((line) => {
-            if (line.includes("}")) {
+            const trimmedLine = line.trim();
+
+            // Reduzir o nível de indentação se a linha for uma chave de fechamento
+            if (trimmedLine === "}") {
                 level--;
             }
-            code.push(tab.repeat(Math.max(level, 0)) + line);
-            if (line.includes("{")) {
+
+            // Adicionar a linha com a indentação apropriada
+            code.push(tab.repeat(Math.max(level, 0)) + trimmedLine);
+
+            // Aumentar o nível de indentação se a linha for uma chave de abertura
+            if (trimmedLine.endsWith("{")) {
                 level++;
             }
         });
+
         return code.join("\n");
     }
+
     function warnAboutNodesWithoutEdges(nodes: any) {
         nodes.forEach((node: any) => {
             const outgoers = getOutgoers(node, nodes, edges);
@@ -184,7 +205,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     }
     function warnAboutMultipleUsePorts(nodes: any) {
         nodes
-            .filter((node: any) => paramTypes.includes(node.data.extras.type))
+            .filter((node: any) => paramTypes.includes(node.data.selectedType))
             .forEach((node: any) => {
                 node.ports.forEach((port: any) => {
                     // console.log("checking ", port);
@@ -233,11 +254,12 @@ function generateCode(model: any): { code: string; problems: any[] } {
         return "ok";
     }
 
-    function getEdgesFromModel(model: any) {
+    function getEdgesFromModel(nodes: any) {
         const temp: any[] = [];
-        Object.entries(model.edges).forEach((edge: any) => {
+        Object.entries(nodes.edges).forEach((edge: any) => {
             temp.push(edge[1]);
         });
+        console.log("edges", temp);
         return temp;
     }
     function getNodesFromModel(model: any) {
@@ -250,7 +272,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function getComponentsFromNodes(nodes: any) {
         let temp: any[] = [];
         nodes
-            .filter((node: any) => node.data.extras?.type === "component")
+            .filter((node: any) => node.data.extras?.type === "custom")
             .forEach((node: any) => {
                 node.instance =
                     node.name.toLowerCase().replace(" ", "") +
@@ -297,6 +319,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
         );
     }
     function getLink(edgeID: string) {
+
         return edges.find((l) => l.id === edgeID);
     }
     function getPort(nodeID: string, portID: string) {
@@ -336,250 +359,107 @@ function generateCode(model: any): { code: string; problems: any[] } {
     function addLifecycleMethods() {
         add("");
         add(`// Micro-controller's Lifecycle`);
-        controller?.data.handles.forEach((handle: any) => {
-            add("void ", handle.edge, "{");
-            // handle.edges.forEach((l: any) => {
-            //    processLink(l);
-            // });
+        const declaredVariables = new Set<string>();
+        const declaredMethods = new Set<string>();
+        const processedEdges = new Set<string>();
 
-            //todo fix this
+        controller?.data.handles.forEach((handle: any) => {
+
+            add(`void ${handle.edge} {`);
+
+            // Filtrar os nós que correspondem ao método atual para declarar variáveis
+            const matchingNodes = nodes.filter((node: any) => node.data.extras?.declarationLocal === handle.edge);
+
+            // Declarar variáveis no método correspondente
+            matchingNodes.forEach((node: any) => {
+                const params = node.data.extras.variables?.split(",") || [];
+                const isArray = params.length > 1;
+                const count = isArray ? `[${params.length}]` : "";
+                const formattedParams = isArray ? `{${params.join(", ")}}` : params.join(", ");
+                const equals = formattedParams ? "=" : "";
+
+                const variableKey = `${handle.edge}:${formattedParams}`;
+                if (!declaredVariables.has(variableKey)) {
+                    declaredVariables.add(variableKey);
+                    add(`    ${formattedParams} ${count} ${equals} ${node.data.extras.parameters};`);
+                }
+            });
+
+            // Filtrar as edges que correspondem ao handle atual e evitar duplicações
+            const matchingEdges = edges.filter((edge: any) => edge.data?.methods?.includes(handle.edge));
+
+            matchingEdges.forEach((edge: any) => {
+                edge.data.methodsEnd?.forEach((methodDeclaration: string) => {
+                    const methodKey = `${handle.edge}:${methodDeclaration}`;
+
+                    // Verificar se o método já foi declarado
+                    if (!declaredMethods.has(methodKey)) {
+                        declaredMethods.add(methodKey);
+                        add(`    ${methodDeclaration};`);
+                    }
+                });
+
+                // Adicionar a edge ao Set de edges processadas
+                processedEdges.add(edge.id);
+            });
+
             add("}\n");
         });
     }
+
+
     // #endregion
 
-    // #region Unreviewed Functions
-    function processLink(l: any) {
-        function callWithParameters(port: any, params: any) {
-            const node = getNode(port.parentNode);
-            console.log("callWithParmeters", port, node, params);
-            if (node?.name === "Function") {
-                if (port.name === "declare") {
-                    declareFunction(node);
-                    return;
-                }
-            }
+    // #region Unreviewed Functions 
+    function processLink(link: any) {
+        const declaredMethods = new Set();
 
-            const expected =
-                port.name
-                    ?.split("(")[1]
-                    ?.split(")")[0]
-                    ?.split(",")
-                    ?.filter((x: any) => x !== "") || [];
-            const received: any[] = [];
-
-            params.forEach((p: any) => {
-                if (paramTypes.includes(p.data.extras.type)) {
-                    received.push(
-                        ...p.data.extras.value
-                            .split(",")
-                            .map((m: any) => p.data.extras.returnType + " " + m)
-                    );
-                }
-            });
-
-            if (
-                warnAboutExpectedVersusReceived(port, node, expected, received) ===
-                "error"
-            )
+        // Função para declarar a chamada de método dinamicamente
+        function declareMethodCall(sourceNode: any, targetNode: any, edge: any) {
+            // Verificar se `edge.data` existe antes de acessar `methodsEnd`
+            if (!edge.data || !edge.data.methodsEnd) {
+                console.warn(`Dados do edge ou 'methodsEnd' não encontrados para o edge: ${edge.id}`);
                 return;
+            }
 
-            expected.forEach((ex: any, index: number) => {
-                const expectedType =
-                    returnTypes.find((rt: any) => ex.trim().startsWith(rt)) ||
-                    node.data.extras?.returnType;
-                const re = received[index];
+            const params = sourceNode.data.extras?.variables || "";
+            const callLocation = sourceNode.data.extras?.declarationLocal;
 
-                if (ex.includes("=") && !re) {
-                    //uses default value
-                } else {
-                    const receivedType = returnTypes.find((rt: any) => re.startsWith(rt));
+            // Verificar se o local de chamada foi identificado
+            if (!callLocation) {
+                console.warn(`Local de chamada não encontrado para o link entre ${sourceNode.id} e ${targetNode.id}`);
+                return;
+            }
 
-                    if (expectedType !== receivedType) {
-                        warn(
-                            `The function call "${port.name}" expects its ${ordinals[index]} parameter to be of type "${expectedType}", received "${receivedType}" instead`,
-                            node,
-                            port
-                        );
-                    }
+            // Iterar sobre cada entrada em `methodsEnd` e inseri-las no local correto
+            edge.data.methodsEnd.forEach((methodDeclaration: string) => {
+                // Evitar duplicação de declaração de métodos
+                const methodKey = `${callLocation}:${methodDeclaration}`;
+                if (!declaredMethods.has(methodKey)) {
+                    declaredMethods.add(methodKey);
+                    add(`    ${methodDeclaration};`);
                 }
             });
-
-            if (node?.instance) {
-                add(
-                    node.instance +
-                    "." +
-                    port.name.substring(
-                        port.name.indexOf(" ") + 1,
-                        port.name.indexOf("(")
-                    ) +
-                    "(" +
-                    formattedParameters(params) +
-                    ")" +
-                    ";"
-                );
-            } else if (fromNode?.instance) {
-                add(fromNode.instance + "." + fromPort.name + "();");
-            } else if (port.name.startsWith("void setValue")) {
-                let variableParams = formattedParameters(params);
-
-                // variableParams = variableParams.split(',')
-                // console.log('adding', node.data.extras.name, variableParams)
-                add(node.data.extras.name + " = " + variableParams);
-            } else if (node.data.extras.type === "built-in") {
-                add(
-                    port.name.substring(
-                        port.name.indexOf(" ") + 1,
-                        port.name.indexOf("(")
-                    ) +
-                    "(" +
-                    formattedParameters(params) +
-                    ")" +
-                    ";"
-                );
-            } else if (node.data.extras.type === "logic") {
-                if (node.name === "Function") {
-                    add(node.data.extras.value + "()");
-                } else if (node.name === "Condition") {
-                    const xValue = getCoditionalValue(node, "void set(T xValue)");
-                    const yValue = getCoditionalValue(node, "void set(T yValue)");
-
-                    const outcomePort2 = getOutcome(node);
-                    const toNode2 = getParent(outcomePort2);
-
-                    const outcomePort3 = getOutcome(node, "else");
-                    const toNode3 = getParent(outcomePort3);
-
-                    add("if (", xValue, " " + node.data.extras.value + " ", yValue, ") {");
-                    if (toNode2) {
-                        outcomePort2.edges.forEach((l: any) => {
-                            processLink(l);
-                        });
-                    } else {
-                        add("/* Lacking code to be executed if conditional is true */");
-                    }
-                    if (toNode3) {
-                        add("} else {");
-                        outcomePort3.edges.forEach((l: any) => {
-                            processLink(l);
-                        });
-                        // callWithParameters(toNode3);
-                    }
-                    add("}\n");
-                } else {
-                    console.log("almost confused", node);
-                    add(node.data.extras.value);
-                }
-            } else {
-                console.log("confusion at ", port, node, fromNode);
-                add("confusion");
-                // warn('Loose connection', [fromNode]);
-            }
-            // try {
-            //     if (node.data.extras.type === 'constant') {
-            //         contents.push(node.data.extras.name);
-            //     } else {
-            //         contents.push(node.data.extras.value);
-            //     }
-            // } catch (error) {
-            //     console.log('error, no parameter?');
-            // }
-            // node.ports.forEach((port: any) => {
-            //     port.edges.forEach((l: any) => {
-            //         const edge = getLink(l);
-            //         const toPort = getPort(edge.target, edge.targetPort);
-            //         const toNode = getNode(toPort?.parentNode);
-            //         if (!toNode) {
-            //         } else if (toNode?.id === node?.id) { //skip as it is the previous edge
-            //             if (toNode.instance) {
-            //                 add(toNode.instance + '.' + toPort.name.split("(").shift() + '(' + contents + ');');
-            //             }
-            //         } else if (toNode?.data.extras?.type === 'built-in') {
-            //             add(toPort.name.split("(").shift() + '(' + contents + ');');
-            //         } else if (!toNode?.instance) { //points to another variable/port
-            //             callWithParameters(toNode, ...extrass);
-            //         } else { //points to a class instance, we hope it is a method call
-            //             //todo: check for parameter type and numbers
-            //             add(toNode.instance + '.' + (toPort.name.split("(").shift()) + '(' + contents + ');');
-            //         }
-            //     });
-            // });
-        }
-        function getCoditionalValue(conditionNode: any, portName: any): string {
-            try {
-                let edgeID = conditionNode.ports.find((p: any) => p.name === portName)
-                    .edges[0];
-                let edge = getLink(edgeID);
-                let port = getPort(edge.source, edge.sourcePort);
-                let parent = getParent(port);
-
-                if (paramTypes.includes(parent.data.extras.type)) {
-                    return parent.data.extras.value;
-                } else if (["component"].includes(parent.data.extras.type)) {
-                    return parent.instance + "." + port.name;
-                } else {
-                    return add("/* Unknown data.extras.type */");
-                }
-            } catch (error) {
-                return "/* Lacking Value */";
-            }
-        }
-        function getOutcome(conditionNode: any, ifThis = "body") {
-            try {
-                let edgeID = conditionNode.ports.find((p: any) => p.name === ifThis)
-                    .edges[0];
-                let edge = getLink(edgeID);
-                return getPort(edge.target, edge.targetPort);
-            } catch (error) {
-                return { label: "// Lacking Outcome" };
-            }
         }
 
-        const edge = getLink(l);
-        if (!edge) return;
-        const fromPort = getPort(edge.source, edge.sourcePort);
-        const fromNode = getNode(fromPort.parentNode);
-        const toPort = getPort(edge.target, edge.targetPort);
-        if (!toPort) return;
+        // Iterar sobre cada edge dentro de `edges`
+        edges.forEach((edge) => {
+            const sourceNode = nodes.find((n) => n.id === edge.source);
+            const targetNode = nodes.find((n) => n.id === edge.target);
 
-        const params: any[] = [];
-
-        function resolveTarget(
-            toPort: any,
-            params: any[]
-        ): { toPort: any; params: any[] } {
-            const toNode = getNode(toPort.parentNode);
-
-            if (paramTypes.includes(toNode?.data.extras?.type)) {
-                params.push(toNode);
-
-                let nextFromPort = getOutPort(toPort);
-                if (!nextFromPort) return { toPort: undefined, params };
-                let nextLink = getLink(nextFromPort.edges[0]);
-                if (!nextLink) return { toPort: undefined, params };
-                let nextToPort = getPort(nextLink.target, nextLink.targetPort);
-                if (!nextToPort) return { toPort: undefined, params };
-                let nextToNode = getNode(nextToPort.parentNode);
-
-                if (paramTypes.includes(nextToNode?.data.extras?.type)) {
-                    return resolveTarget(nextToPort, params);
-                }
-                return { toPort: nextToPort, params };
+            if (!sourceNode || !targetNode) {
+                console.warn("Nó de origem ou destino não encontrado.");
+                return;
             }
-            return { toPort: toPort, params };
-        }
 
-        const target: any = resolveTarget(toPort, params);
-        if (target.toPort) callWithParameters(target.toPort, target.params);
+            console.log(`Processando edge com ID: ${edge.id}`);
 
-        // if (toNode?.data.extras?.type === 'built-in') {
-        //     add(toPort.name + '()');
-        // } else if (toNode?.name === "Function") {
-        //     add(toNode.data.extras.value, '(', ');');
-        // } else if (toNode?.name === "Condition") {
-
-        // }
+            // Declarar a chamada de método usando todas as entradas de `methodsEnd`
+            declareMethodCall(sourceNode, targetNode, edge);
+        });
     }
+
+
 
     // function oldRemoveTypes(name: string): string {
     //     const firstSpace = name.indexOf(' ') + 1;
@@ -605,8 +485,9 @@ function generateCode(model: any): { code: string; problems: any[] } {
     let code = "";
     const problems: any[] = [];
 
-    const edges: any[] = getEdgesFromModel(model);
+
     const nodes: any[] = getNodesFromModel(model);
+    const edges: any[] = getEdgesFromModel(model);
     const logics: any[] = nodes.filter((node) => node.data.extras?.type === "logic");
     const components: any[] = getComponentsFromNodes(nodes);
     const controller = nodes.find((node) => node.data.extras?.type === "controller");
@@ -632,6 +513,7 @@ function generateCode(model: any): { code: string; problems: any[] } {
 
     // #region Generator Lifecycle
     console.log("----- Starting Code Generation -----");
+    //to fo fix all warnings and header comments
     addHeaderComments();
     warnAboutNumberOfControllers();
     warnAboutPortUsage();
@@ -641,13 +523,13 @@ function generateCode(model: any): { code: string; problems: any[] } {
     addLibraries();
     addFunctionDeclarations(logics.filter((l) => l.name === "Function"));
     addConstantDeclarations(constants);
-    addVariableDeclarations(variables);
+    addVariableDeclarations(nodes);
     addLifecycleMethods();
     // #endregion
     return { code: indentCode(code), problems };
 }
-export default function Code(props: { model: string }) {
-    console.log('CodeComponent render', props.model)
+export default function Code(props: { model: string }): { code: string; problems: any[] } {
+    console.log('CodeComponent render', props.model);
 
     const model = props.model;
     let code = "";
@@ -655,6 +537,7 @@ export default function Code(props: { model: string }) {
     let uniqueProblems: any[] = [];
 
     if (model === "{}" || model === "") {
+        return { code: "", problems: [] };
     } else {
         ({ code, problems } = generateCode(JSON.parse(model)));
 
@@ -662,6 +545,9 @@ export default function Code(props: { model: string }) {
             return index === self.findIndex((p) => p.message === problem.message);
         });
     }
+
     console.log("code", code);
 
+    // Retornar o resultado
+    return { code, problems };
 }

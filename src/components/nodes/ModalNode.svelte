@@ -111,9 +111,9 @@
   let parameters = [
     {
       //@ts-ignore
-      value: sourceNode.data.extras.inputParameterContent,
+      value: sourceNode.data.extras.parameters,
       //@ts-ignore
-      label: sourceNode.data.extras.inputParameterName,
+      label: sourceNode.data.extras.variables,
     },
   ];
 

@@ -8,20 +8,28 @@
         BackgroundVariant,
         MiniMap,
         useSvelteFlow,
+        Panel,
+        type ColorMode,
         type Edge,
         type Node,
         type NodeTypes,
     } from "@xyflow/svelte";
+    //@ts-ignore
     import Sidebar from "./components/sidebar/Sidebar.svelte";
     import paletteNodes from "./nodes.json";
     import ModalNode from "./components/nodes/ModalNode.svelte";
+    //@ts-ignore
     import CustomNode from "./components/nodes/CustomNode.svelte";
+    //@ts-ignore
     import ResultNode from "./components/nodes/ResultNode.svelte";
+    //@ts-ignore
     import NodeModal from "./components/nodes/NodeModal.svelte";
+    //@ts-ignore
     import CustomEdge from "./components/edges/CustomEdge.svelte";
     import { edges, nodes } from "./components/code/store";
     import generateCode from "./components/code/code";
-
+    import Code from "./components/code/code";
+    import CodeViewer from "./components/codeViewer/codeViewer.svelte";
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
         useSvelteFlow();
@@ -82,6 +90,7 @@
         const targetNode = nodesAux.find((node) => node.id === edge.target);
 
         // Find the handle that matches the edge
+        //@ts-ignore
         const handle = sourceNode?.data?.handles.find(
             (h) => h.id === edge.sourceHandle,
         );
@@ -92,6 +101,7 @@
             if (targetNode.data.handles === undefined) {
                 return;
             } else {
+                //@ts-ignore
                 const handleEnd = targetNode.data.handles.find(
                     (h) => h.id === edge.targetHandle,
                 );
@@ -150,65 +160,44 @@
         updateNode(edge.source, { position: sourceNode.position });
     };
 
-    // Node click handler
-    export const createNodeModal = (event: CustomEvent<{ node: Node }>) => {
-        const nodeId = event.detail.node.id;
-        const nodesAux: Node[] = getNodes();
-        const sourceNode = nodesAux.find((node) => node.id === nodeId);
-        if (sourceNode.type === "config" || sourceNode.type === "modal") return;
-        if (!sourceNode) return;
-
-        const newNode: Node = {
-            id: `${modalNodeId++}`,
-            type: "config",
-            data: {
-                //@ts-ignore
-                inputParameterName:
-                    sourceNode.data.extras?.inputParameterName || "",
-                methods: sourceNode.data.handles.map((h) => h.edge),
-                source: sourceNode.id,
-                // extra: {
-                // },
-            },
-            position: {
-                x: sourceNode.position.x - 130,
-                y: sourceNode.position.y - 290,
-            },
-        };
-
-        nodes.update((n) => [...n, newNode]);
-    };
-
     export function getRepresentation() {
         const representation = toObject();
         return { model: JSON.stringify(representation) };
     }
+
+    // Stores reativas para `code` e `problems`
+    export const code = writable("");
+    export const problems = writable([]);
+
+    const onSaveClick = () => {
+        const result = generateCode(getRepresentation());
+        if (result) {
+            code.set(result.code);
+            problems.set(result.problems);
+        }
+    };
+
+    let colorMode: ColorMode = "dark";
 </script>
 
 <main>
-    <button
-        class="save-button"
-        on:click={() => {
-            generateCode(getRepresentation());
-        }}>Salvar</button
-    >
+    <Sidebar nodes={paletteNodes} />
     <SvelteFlow
         {nodes}
         {edges}
         {nodeTypes}
         {edgeTypes}
+        {colorMode}
         defaultEdgeOptions={{ type: "customEdge" }}
         on:dragover={onDragOver}
         on:drop={onDrop}
         on:edgeclick={onEdgeClick}
-        on:nodeclick={(e) => createNodeModal(e)}
     >
         <Controls />
         <Background variant={BackgroundVariant.Dots} />
-
         <MiniMap pannable zoomable />
     </SvelteFlow>
-    <Sidebar nodes={paletteNodes} />
+    <CodeViewer code={$code} problems={$problems} {onSaveClick} />
 </main>
 
 <style>

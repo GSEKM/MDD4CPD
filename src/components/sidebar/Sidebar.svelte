@@ -16,7 +16,9 @@
         }
     };
 
-    const types = Array.from(new Set(nodes.map((node: any) => node.extras.type)));
+    const types = Array.from(
+        new Set(nodes.map((node: any) => node.extras.type)),
+    );
     console.log(types);
 </script>
 
@@ -39,9 +41,9 @@
     <div class="mb-0"></div>
     <div class="flexbox items-center justify-center">
         {#each types as type}
-            <div class="type-label">{type}</div>
+            <div class="type-label">{type.toUpperCase()}</div>
             <div
-                style="background-color: white; border: 2px solid black; padding: 2px"
+                style="background-color: #2d2d2d; border: 2px dashed white; padding: 2px ; color: white"
             >
                 {#each nodes as node}
                     {#if node.extras.type == type}
@@ -65,12 +67,15 @@
 
 <style>
     aside {
-        width: 20%;
+        width: 25%;
         background: #f4f4f4;
         font-size: 12px;
         display: flex;
         flex-direction: column;
         overflow: auto;
+        background-color: #2d2d2d;
+
+        scrollbar-width: none; /* Firefox */
     }
 
     .node {
@@ -83,6 +88,7 @@
         cursor: grab;
         width: 95%;
         text-align: center;
+        background-color: black;
     }
 
     .type-label {
@@ -91,7 +97,7 @@
         font-weight: bold;
         margin: 3px;
         margin-top: 17px;
-        color: #0f0a0a;
+        color: #fff;
         border-radius: 15px;
     }
     .button {
