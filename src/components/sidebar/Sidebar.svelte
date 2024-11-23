@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Background } from "@xyflow/svelte";
+    import { backIn } from "svelte/easing";
 
     export let nodes: any[]; // exportando a variável node, lista de objetos. let porque o valor varia
 
@@ -20,6 +21,21 @@
 </script>
 
 <aside>
+<div class="mb-0"></div>
+<div class="flexbox items-center justify-center">
+    <button class="button" on:click={() => {
+        const library = prompt("Digite o nome da biblioteca");
+        if (library) {
+            nodes.push({
+                name: library,
+                extras: {
+                    type: "library",
+                    description: "Biblioteca",
+                },
+            });
+        }
+    }}>Adicionar biblioteca</button>
+</div>
     <div class="mb-0"></div>
     <div class="flexbox items-center justify-center">
         {#each types as type}
@@ -77,5 +93,17 @@
         margin-top: 17px;
         color: #0f0a0a;
         border-radius: 15px;
+    }
+    .button {
+        background-color: #171724;
+        color: white;
+        padding: 15px 35px;
+        cursor: pointer;
+        border-radius: 15px;
+        font-size: 12px;
+        text-align: center;
+        font-weight: bold;
+        margin: 50px;
+        margin-top: 17px;
     }
 </style>
