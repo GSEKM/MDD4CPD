@@ -2,50 +2,79 @@
     import { Background } from "@xyflow/svelte";
     import { backIn } from "svelte/easing";
 
-    export let nodes: any[]; // exportando a variável node, lista de objetos. let porque o valor varia
+    export let nodes: any[] = []; // Inicializando com uma lista vazia
 
+
+    const onDrop = (event: DragEvent) => {
+        if(event.dataTransfer){
+            const data = event.dataTransfer.getData("application/json");
+            const node = JSON.parse(data);
+            //
+        }
+    }
+    // Função chamada ao começar a arrastar um item
     const onDragStart = (event: DragEvent, node: any) => {
-        // Usuário começa a arrastar um item
-        /* DragEvent = movimento de arrastar; Node = objeto que será arrastado, da lista nodes*/
         if (event.dataTransfer) {
             event.dataTransfer.setData(
-                "application/svelteflow",
-                JSON.stringify(node),
+                "application/json",
+                JSON.stringify(node)
             );
             event.dataTransfer.effectAllowed = "move";
         }
     };
 
+    // Obtendo os tipos únicos dos nós
     const types = Array.from(
-        new Set(nodes.map((node: any) => node.extras.type)),
+        new Set(nodes.map((node: any) => node.extras.type))
     );
-    console.log(types);
+
+    const addArduinoLibrary = async () => {
+        const library = prompt("Digite o caminho do arquivo .h");
+        if (library) {
+            try {
+                if (library.endsWith(".h") || library.endsWith(".zip")) {
+                    // Faz o upload da biblioteca
+                    const response = await fetch("/add-library", {
+                        method: "POST",
+                        body: JSON.stringify({ libraryPath: library }),
+                        headers: { "Content-Type": "application/json" },
+                    });
+
+                    if (response.ok) {
+                        alert("Biblioteca adicionada com sucesso!");
+                        nodes.push({
+                            name: library.split("/").pop(),
+                            extras: {
+                                type: "arduino",
+                                description: "Biblioteca Arduino",
+                            },
+                            color: "#4caf50",
+                        });
+                    } else {
+                        throw new Error("Erro ao adicionar a biblioteca");
+                    }
+                } else {
+                    alert("Por favor, insira o caminho de um arquivo .zip válido.");
+                }
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        }
+    };
 </script>
 
 <aside>
-<div class="mb-0"></div>
-<div class="flexbox items-center justify-center">
-    <button class="button" on:click={() => {
-        const library = prompt("Digite o nome da biblioteca");
-        if (library) {
-            nodes.push({
-                name: library,
-                extras: {
-                    type: "library",
-                    description: "Biblioteca",
-                },
-            });
-        }
-    }}>Adicionar biblioteca</button>
-</div>
-    <div class="mb-0"></div>
+    <div class="flexbox items-center justify-center">
+        <button class="button" on:click={addArduinoLibrary}>Adicionar biblioteca</button>
+    </div>
+
     <div class="flexbox items-center justify-center">
         {#each types as type}
             <div class="type-label">{type.toUpperCase()}</div>
             <div
-                style="background-color: #2d2d2d; border: 2px dashed white; padding: 2px ; color: white"
+                style="background-color: #2d2d2d; border: 2px dashed white; padding: 5px; color: white"
             >
-                {#each nodes as node}
+                {#each nodes as node (node.name)}
                     {#if node.extras.type == type}
                         <div
                             class="output-node node"
@@ -54,7 +83,7 @@
                             draggable={true}
                             on:dragstart={(event) => onDragStart(event, node)}
                             title={node.extras.description}
-                            style="{`border-color: ${node.color}`};"
+                            style="border-color: {node.color};"
                         >
                             {node.name}
                         </div>
@@ -74,7 +103,6 @@
         flex-direction: column;
         overflow: auto;
         background-color: #2d2d2d;
-
         scrollbar-width: none; /* Firefox */
     }
 
@@ -84,7 +112,6 @@
         border-radius: 10px;
         padding: 0.5rem 1rem;
         font-weight: 700;
-        border-radius: 3px;
         cursor: grab;
         width: 95%;
         text-align: center;
@@ -98,8 +125,8 @@
         margin: 3px;
         margin-top: 17px;
         color: #fff;
-        border-radius: 15px;
     }
+
     .button {
         background-color: #171724;
         color: white;
@@ -110,6 +137,5 @@
         text-align: center;
         font-weight: bold;
         margin: 50px;
-        margin-top: 17px;
     }
 </style>
