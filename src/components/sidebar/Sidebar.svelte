@@ -15,7 +15,7 @@
     const onDragStart = (event: DragEvent, node: any) => {
         if (event.dataTransfer) {
             event.dataTransfer.setData(
-                "application/json",
+                "application/svelteflow", // o erro que impedia o drag and drop de funcionar foi corrigido, o problema era que a referencia estava como "application/json" e não "application/svelteflow"
                 JSON.stringify(node),
             );
             event.dataTransfer.effectAllowed = "move";
@@ -75,7 +75,7 @@
         {#each types as type}
             <div class="type-label">{type.toUpperCase()}</div>
             <div
-                style="background-color: #2d2d2d; border: 2px dashed white; padding: 2px ; color: white"
+                style="background-color: #2d2d2d; border: 2px dashed white; padding: 5px; color: white"
             >
                 {#each nodes as node (node.name)}
                     {#if node.extras.type == type}
