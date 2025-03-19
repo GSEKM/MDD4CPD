@@ -96,7 +96,7 @@
         );
         console.log("sourceNode.handles", sourceNode.data.handles);
         console.log("handle", handle);
-        console.log("edge.data", edge.data);
+
         function defineHandleEnd() {
             if (targetNode.data.handles === undefined) {
                 return;
@@ -118,7 +118,6 @@
 
         const newData = {
             ...edge?.data,
-            text: sourceNode.data.text,
             methods: [method], // Pass the specific method
             methodsEnd: [methodEnd],
         };

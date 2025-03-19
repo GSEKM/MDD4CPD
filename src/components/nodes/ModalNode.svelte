@@ -50,7 +50,7 @@
     }
   }
 
-  function updateNodeDataAndCode() {
+  export function updateNodeDataAndCode() {
     updateMethodsEnd();
     const code = generateArduinoCode();
     arduinoCode.set(code);

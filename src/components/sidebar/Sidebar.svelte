@@ -27,7 +27,7 @@
         {#each types as type}
             <div class="type-label">{type.toUpperCase()}</div>
             <div
-                style="background-color: #2d2d2d; border: 2px dashed white; padding: 2px ; color: white"
+                style="background-color: #2d2d2d; border: 2px dashed gray; padding: 2px ; color: white"
             >
                 {#each nodes as node}
                     {#if node.extras.type == type}

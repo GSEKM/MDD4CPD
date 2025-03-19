@@ -5,7 +5,6 @@
     BaseEdge,
     EdgeLabelRenderer,
   } from "@xyflow/svelte";
-
   type $$Props = EdgeProps;
 
   export let sourceX: $$Props["sourceX"];
