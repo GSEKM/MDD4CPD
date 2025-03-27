@@ -4,13 +4,6 @@
 
     export let nodes: any[] = []; // Inicializando com uma lista vazia
 
-    const onDrop = (event: DragEvent) => {
-        if (event.dataTransfer) {
-            const data = event.dataTransfer.getData("application/json");
-            const node = JSON.parse(data);
-            //
-        }
-    };
     // Função chamada ao começar a arrastar um item
     const onDragStart = (event: DragEvent, node: any) => {
         if (event.dataTransfer) {
@@ -27,57 +20,35 @@
         new Set(nodes.map((node: any) => node.extras.type)),
     );
 
-    const addArduinoLibrary = async () => {
-        const library = prompt("Digite o caminho do arquivo .h");
-        if (library) {
-            try {
-                if (library.endsWith(".h") || library.endsWith(".zip")) {
-                    // Faz o upload da biblioteca
-                    const response = await fetch("/add-library", {
-                        method: "POST",
-                        body: JSON.stringify({ libraryPath: library }),
-                        headers: { "Content-Type": "application/json" },
-                    });
+    let searchTerm = "";
 
-                    if (response.ok) {
-                        alert("Biblioteca adicionada com sucesso!");
-                        nodes.push({
-                            name: library.split("/").pop(),
-                            extras: {
-                                type: "arduino",
-                                description: "Biblioteca Arduino",
-                            },
-                            color: "#4caf50",
-                        });
-                    } else {
-                        throw new Error("Erro ao adicionar a biblioteca");
-                    }
-                } else {
-                    alert(
-                        "Por favor, insira o caminho de um arquivo .zip válido.",
-                    );
-                }
-            } catch (error) {
-                alert(`Erro: ${error.message}`);
-            }
-        }
-    };
+    $: filteredNodes = searchTerm
+        ? nodes.filter(node =>
+            node.name.toLowerCase().includes(searchTerm.toLowerCase())
+        ) : nodes;
+
+    $: visibleTypes = Array.from(
+        new Set(filteredNodes.map((node: any) => node.extras.type))
+    );
 </script>
 
 <aside>
-    <div class="flexbox items-center justify-center">
-        <button class="button" on:click={addArduinoLibrary}
-            >Adicionar biblioteca</button
-        >
+    <div class="search-container">
+        <input
+            type="text"
+            bind:value={searchTerm}
+            placeholder="Pesquisar"
+            class="search-input"
+            />
     </div>
 
     <div class="flexbox items-center justify-center">
-        {#each types as type}
+        {#each visibleTypes as type}
             <div class="type-label">{type.toUpperCase()}</div>
             <div
                 style="background-color: #2d2d2d; border: 2px dashed white; padding: 5px; color: white"
             >
-                {#each nodes as node (node.name)}
+                {#each filteredNodes as node (node.name)}
                     {#if node.extras.type == type}
                         <div
                             class="output-node node"
@@ -129,16 +100,20 @@
         margin-top: 17px;
         color: #fff;
     }
+    
+    .search-container{
+        padding: 10px;
+        top: 0;
+        position: sticky;
+        z-index: 10;
+    }
 
-    .button {
-        background-color: #171724;
+    .search-input {
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #444;
+        background-color: #1a1a1a;
         color: white;
-        padding: 15px 35px;
-        cursor: pointer;
-        border-radius: 15px;
-        font-size: 12px;
-        text-align: center;
-        font-weight: bold;
-        margin: 50px;
     }
 </style>
