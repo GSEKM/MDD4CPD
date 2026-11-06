@@ -8,6 +8,7 @@
 
 import { unzipSync, strFromU8 } from "fflate";
 import { parseHeaders, type ParsedClass } from "./headerParser";
+import { sha256Hex } from "./sha256";
 
 export const INDEX_URL = "https://downloads.arduino.cc/libraries/library_index.json.gz";
 
@@ -120,11 +121,6 @@ export function searchIndex(index: LibraryEntry[], query: string, limit = 50): L
 // #endregion
 
 // #region Archive
-async function sha256Hex(data: Uint8Array): Promise<string> {
-    const digest = await crypto.subtle.digest("SHA-256", data);
-    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 export function parseProperties(text: string): Record<string, string> {
     const props: Record<string, string> = {};
     text.split(/\r?\n/).forEach((line) => {
