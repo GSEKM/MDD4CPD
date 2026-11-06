@@ -11,6 +11,9 @@
   type $$Props = NodeProps;
   export let id: $$Props["id"];
   export let data: $$Props["data"];
+  // Svelte Flow passes more props than we use; referencing $$restProps
+  // silences the dev-mode "unknown prop" warnings.
+  $$restProps;
 
   const { updateNodeData } = useSvelteFlow();
   const updateNodeInternals = useUpdateNodeInternals();
