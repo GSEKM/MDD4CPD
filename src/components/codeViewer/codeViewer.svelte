@@ -65,14 +65,15 @@
     dispatch("stopEdit");
   }
 
-  function revert() {
+  async function revert() {
     if (!confirm("Undo every change made since you started editing?")) return;
     clearTimeout(timer);
     dirty = false;
     status = null;
     dispatch("revert");
-    // the restored diagram's code arrives through the code prop
-    synced = "\u0000";
+    await tick();
+    draft = code || TEMPLATE;
+    synced = code;
   }
 
   function evaluate(force = false) {
@@ -89,10 +90,15 @@
   }
 
   // Changes made on the canvas while editing replace a draft that is in sync.
-  $: if (editing && code !== synced && !dirty && status?.kind !== "blocked") {
-    draft = code || TEMPLATE;
-    synced = code;
+  // Runs only when the code prop changes: other state (synced, dirty) also
+  // changes while an edit is applied, one update before the new code arrives.
+  function onCanvasCode(code: string) {
+    if (editing && code !== synced && !dirty && status?.kind !== "blocked") {
+      draft = code || TEMPLATE;
+      synced = code;
+    }
   }
+  $: onCanvasCode(code);
 
   function insert(text: string) {
     // execCommand keeps the browser's undo history (Ctrl+Z)

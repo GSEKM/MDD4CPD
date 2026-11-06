@@ -126,9 +126,10 @@ export function estimateSize(n: DNode): { width: number; height: number } {
     const rows = Math.max(0, ...d.handles.map((h: HandleInfo) => h.index + 1));
     const editors = ["hasReturnType", "hasPortType", "hasUsername", "hasValue"].filter((k) => d.extras[k]).length;
     const longest = Math.max(8, ...d.handles.map((h: HandleInfo) => h.edge.length));
+    // calibrated against the rendered blocks (CustomNode)
     return {
-        width: Math.min(320, 60 + longest * 6.5),
-        height: 44 + editors * 29 + Math.min(rows, 10) * 26 + (d.extras.hasUsages ? 32 : 0),
+        width: Math.min(320, Math.max(170, 60 + longest * 6.5, editors >= 2 ? 250 : 0)),
+        height: 52 + editors * 36 + Math.min(rows, 10) * 26 + (d.extras.hasUsages ? 32 : 0),
     };
 }
 
