@@ -173,7 +173,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/",
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/",
             "description": "<div><code>true</code> is often said to be defined as 1, which is correct, but true has a wider definition. Any integer which is non-zero is true, in a Boolean sense. So -1, 2 and -200 are all defined as true, too, in a Boolean sense.</div>"
         },
         "ins": [
@@ -367,7 +367,7 @@
             "type": "built-in"
         },
         "methods": [
-            "void analoglWrite(int pin, int value)",
+            "void analogWrite(int pin, int value)",
             "void pinMode(int pin, int mode)",
             "void analogReference(int type)"
         ]
@@ -393,7 +393,6 @@
             "type": "built-in"
         },
         "methods": [
-            "void delay(int ms)",
             "int abs(int x)",
             "int constrain(int x, int a, int b)",
             "int map(int value, int fromLow, int fromHigh, int toLow, int toHigh)",
@@ -461,7 +460,8 @@
         "name": "Serial",
         "color": "cyan",
         "extras": {
-            "type": "built-in"
+            "type": "built-in",
+            "object": "Serial"
         },
         "methods": [
             "int available()",
@@ -476,6 +476,13 @@
             "int peek()",
             "size_t print(int val)",
             "size_t println(int val)",
+            "size_t print(const String &s)",
+            "size_t print(char c)",
+            "size_t print(double n, int digits = 2)",
+            "size_t println(const String &s)",
+            "size_t println(char c)",
+            "size_t println(double n, int digits = 2)",
+            "size_t println()",
             "int read()",
             "size_t readBytes(char buffer, int length)",
             "size_t readBytesUntil(char character, char buffer, int length)",
@@ -493,7 +500,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -510,7 +517,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -527,7 +534,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -543,7 +550,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -559,7 +566,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -576,7 +583,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -593,7 +600,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -607,7 +614,8 @@
         "color": "blue",
         "extras": {
             "type": "component",
-            "library": "Wire.h"
+            "library": "Wire.h",
+            "className": "TwoWire"
         },
         "methods": [
             "void begin()",
@@ -620,114 +628,6 @@
             "byte write()",
             "byte available()",
             "byte read()"
-        ]
-    },
-    {
-        "name": "PWM Servo",
-        "color": "orange",
-        "extras": {
-            "type": "component",
-            "library": "Adafruit_PWMServoDriver.h"
-        },
-        "methods": [
-            "void begin(uint8_t prescale=0)",
-            "void sleep()",
-            "void wakeup()",
-            "void setExtClk(uint8_t prescale)",
-            "void setPWMFreq(float freq)",
-            "void setOutputMode(bool totempole)",
-            "void setPWM(uint8_t num, uint16_t on, uint16_t off)",
-            "void setPin(uint8_t num, uint16_t val, bool invert=false)",
-            "void writeMicroseconds(uint8_t num, uint16_t Microseconds)",
-            "void setOscillatorFrequency(uint32_t freq)",
-            "uint8_t getPWM(uint8_t num)",
-            "uint8_t readPrescale()",
-            "uint32_t getOscillatorFrequency()"
-        ]
-    },
-    {
-        "name": "Servo",
-        "color": "orange",
-        "extras": {
-            "type": "component",
-            "library": "Servo.h",
-            "link": "arduino.cc/reference/en/libraries/servo/"
-        },
-        "methods": [
-            "uint8_t attach(int pin)",
-            "uint8_t attach(int pin, int min, int max)",
-            "void detach()",
-            "void write(int value)",
-            "void writeMicroseconds(int value)",
-            "int read()",
-            "int readMicroseconds()",
-            "bool attached()"
-        ]
-    },
-    {
-        "name": "Stepper",
-        "color": "orange",
-        "extras": {
-            "type": "component",
-            "library": "Stepper.h"
-        },
-        "methods": [
-            "Stepper(int, int, int)",
-            "Stepper(int, int, int, int, int)",
-            "Stepper(int, int, int, int, int, int)",
-            "void setSpeed(long whatSpeed)",
-            "void step(int number_of_steps)",
-            "int version()"
-        ]
-    },
-    {
-        "name": "Adafruit_BMP085",
-        "color": "orange",
-        "extras": {
-            "type": "component",
-            "library": "Adafruit_BMP085.h",
-            "link": "https: //randomnerdtutorials.com/guide-for-bmp180-barometric-sensor-with-arduino/",
-            "description": "Barometric pressure and temperature sensor, by Adafruit"
-        },
-        "methods": [
-            "bool begin(uint8_t mode = BMP085_ULTRAHIGHRES, TwoWire *wire = &Wire)",
-            "float readTemperature()",
-            "int32_t readPressure",
-            "int32_t readSealevelPressure(float altitude_meters = 0)",
-            "float readAltitude(float sealevelPressure = 101325)",
-            "int16_t readRawTemperature()",
-            "uint32_t readRawPressure()"
-        ]
-    },
-    {
-        "name": "SoftwareWire",
-        "color": "orange",
-        "extras": {
-            "type": "component",
-            "library": "Wire.h",
-            "link": "https: //www.arduino.cc/reference/en/libraries/softwarewire/",
-            "description": "Creates a software I2C/TWI bus on every pins."
-        },
-        "methods": [
-            "SoftwareWire(uint8_t sdaPin, uint8_t sclPin, boolean pullups = true, boolean detectClockStretch = true)",
-            "void end()",
-            "void begin()",
-            "void setClock(uint32_t clock)",
-            "void beginTransmission(uint8_t address)",
-            "void beginTransmission(int address)",
-            "uint8_t endTransmission(boolean sendStop = true)",
-            "uint8_t requestFrom(uint8_t address, uint8_t size, boolean sendStop = true)",
-            "uint8_t requestFrom(int address, int size, boolean sendStop = true)",
-            "size_t write(uint8_t data)",
-            "size_t write(const uint8_t *data, size_t quantity)",
-            "int available(void)",
-            "int read(void)",
-            "int readBytes(uint8_t* buf, uint8_t size)",
-            "int readBytes(char * buf, uint8_t size)",
-            "int readBytes(char * buf, int size)",
-            "int peek(void)",
-            "void setTimeout(long timeout)",
-            "void printStatus(Print& Ser)"
         ]
     }
 ]

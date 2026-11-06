@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`model problems > reports controllers, port range, arity, types and unused blocks 1`] = `
+[
+  "More than one micro-controller",
+  "More than one micro-controller",
+  "This Port does not exist on this micro-controller",
+  "This component has no links",
+  "This component has no links",
+  "The function call \\"void pinMode(int pin, int mode)\\" is receiving 1 parameters instead of the expected 2",
+  "The function call \\"void delay(int ms)\\" expects its first parameter to be of type \\"int\\", received \\"String\\" instead (incompatible types)",
+]
+`;
+
+exports[`model problems > reports controllers, port range, arity, types and unused blocks 2`] = `
+"/* Code generated for Arduino Uno
+Analog ports 0/6
+Digital ports 1/14 (20) */
+
+// Libraries
+#include <Servo.h> // Servo 1.3.0
+
+// Objects
+Servo servo0;
+
+// Micro-controller's Lifecycle
+void setup() {
+}
+
+void loop() {
+    delay(\\"1s\\");
+}
+"
+`;
