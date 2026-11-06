@@ -13,6 +13,7 @@
     save: void;
     clear: void;
     command: void;
+    tidy: void;
   }>();
 
   let menuOpen = false;
@@ -101,6 +102,23 @@
         /></svg
       >
       Save
+    </button>
+    <button
+      class="ui-btn"
+      on:click={() => dispatch("tidy")}
+      disabled={nodeCount === 0}
+      title="Arrange blocks in columns following the code order"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        ><rect x="3" y="4" width="6" height="6" rx="1" /><rect x="15" y="4" width="6" height="6" rx="1" /><rect
+          x="15"
+          y="14"
+          width="6"
+          height="6"
+          rx="1"
+        /><path d="M9 7h6M12 7v10h3" /></svg
+      >
+      Tidy up
     </button>
     <button
       class="ui-btn"
