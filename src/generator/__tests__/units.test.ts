@@ -86,3 +86,23 @@ describe("components", () => {
         expect(code).toContain("Servo servo0;\nServo servo1;");
     });
 });
+
+describe("instance names and core objects", () => {
+    it("keeps a custom instance name and avoids clashes with generated ones", () => {
+        const a = makeNode("Servo", 0, 0, { instanceName: "servo1" });
+        const b = makeNode("Servo", 0, 0);
+        const c = makeNode("Servo", 0, 0, { instanceName: "servo1" }); // duplicate -> generated
+        const { code } = generateCode({ nodes: [makeNode("Arduino Uno", 0, 0), a, b, c], edges: [] });
+        expect(code).toContain("Servo servo1;\nServo servo0;\nServo servo2;");
+    });
+
+    it("prefixes calls on core objects (Serial)", () => {
+        const uno = makeNode("Arduino Uno", 0, 0);
+        const baud = makeNode("Parameter(s)", 0, 0, { returnType: "long", value: "9600" });
+        const serial = makeNode("Serial", 0, 0);
+        const edges: any[] = [];
+        link(edges, uno, "setup()", baud, "in");
+        link(edges, baud, "out", serial, "void begin(long speed)");
+        expect(generateCode({ nodes: [uno, baud, serial], edges }).code).toContain("Serial.begin(9600);");
+    });
+});

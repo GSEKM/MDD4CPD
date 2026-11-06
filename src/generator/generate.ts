@@ -73,17 +73,33 @@ class Generator {
     constructor(private g: Graph) {
         this.controllers = g.nodes.filter((n) => typeOf(n) === "controller");
         this.controller = this.controllers[0];
+        // Instance names: a valid, unique extras.instanceName is kept (e.g. from
+        // an imported sketch); otherwise <class><k> in block order.
+        const components = g.nodes.filter((n) => typeOf(n) === "component");
+        const taken = new Set<string>();
+        const custom = new Map<string, string>();
+        components.forEach((n) => {
+            const name = String(extras(n).instanceName ?? "");
+            if (/^[A-Za-z_]\w*$/.test(name) && !taken.has(name)) {
+                taken.add(name);
+                custom.set(n.id, name);
+            }
+        });
         const counts = new Map<string, number>();
-        g.nodes
-            .filter((n) => typeOf(n) === "component")
-            .forEach((n) => {
-                const cls = this.className(n);
-                const base = cls.toLowerCase().replace(/[^a-z0-9_]/g, "") || "object";
-                const k = counts.get(base) ?? 0;
-                counts.set(base, k + 1);
-                this.instances.set(n.id, base + k);
-                this.components.push(n);
-            });
+        components.forEach((n) => {
+            let name = custom.get(n.id);
+            if (!name) {
+                const base = this.className(n).toLowerCase().replace(/[^a-z0-9_]/g, "") || "object";
+                do {
+                    const k = counts.get(base) ?? 0;
+                    counts.set(base, k + 1);
+                    name = base + k;
+                } while (taken.has(name));
+                taken.add(name);
+            }
+            this.instances.set(n.id, name);
+            this.components.push(n);
+        });
     }
 
     run(): GenerationResult {
@@ -302,7 +318,8 @@ class Generator {
         const src = port.node;
         if (isValue(src)) return this.argsOf(src).map((a) => a.expr).join(", ");
         if (typeOf(src) === "component") return `${this.instances.get(src.id)}.${callName(port.name)}()`;
-        if (typeOf(src) === "built-in") return `${callName(port.name)}()`;
+        if (typeOf(src) === "built-in")
+            return `${extras(src).object ? extras(src).object + "." : ""}${callName(port.name)}()`;
         return "/* Unknown value type */";
     }
     // #endregion
@@ -403,7 +420,11 @@ class Generator {
         if (fromInstance) return w.line(`${fromInstance}.${callName(fromPort.name)}();`);
 
         if (port.name.startsWith("void setValue")) return w.line(`${extras(node).name} = ${argList};`);
-        if (typeOf(node) === "built-in") return w.line(`${callName(port.name)}(${argList});`);
+        if (typeOf(node) === "built-in") {
+            // core objects such as Serial: extras.object = "Serial"
+            const object = extras(node).object ? `${extras(node).object}.` : "";
+            return w.line(`${object}${callName(port.name)}(${argList});`);
+        }
 
         this.problems.add("unsupported", `Unsupported connection to "${port.name}"`, node, port.handle.id);
         w.line(`/* unsupported connection to ${nameOf(node)}: ${port.name} */`);

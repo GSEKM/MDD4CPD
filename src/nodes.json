@@ -460,7 +460,8 @@
         "name": "Serial",
         "color": "cyan",
         "extras": {
-            "type": "built-in"
+            "type": "built-in",
+            "object": "Serial"
         },
         "methods": [
             "int available()",
