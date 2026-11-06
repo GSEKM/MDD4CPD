@@ -1,3 +1,151 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Design tokens: one dark, IDE-like theme for the whole editor. */
+:root {
+  --bg: #0f1115;
+  --panel: #161920;
+  --panel-2: #1c2029;
+  --raised: #232834;
+  --border: #2a303c;
+  --border-strong: #3a4250;
+  --text: #e6e8ee;
+  --text-2: #a4abb9;
+  --text-3: #6f7787;
+  --accent: #4f9dff;
+  --accent-soft: #4f9dff22;
+  --warn: #f5b84a;
+  --warn-soft: #f5b84a1f;
+  --ok: #4cc38a;
+
+  /* Node categories (keyed by extras.type, see components/categories.ts) */
+  --cat-controller: #4cc38a;
+  --cat-value: #f07fa7;
+  --cat-logic: #a98bff;
+  --cat-built-in: #38c6dc;
+  --cat-constant: #5fd0b0;
+  --cat-component: #ff9f4a;
+
+  --radius: 8px;
+  --radius-sm: 5px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Svelte Flow theme */
+  --xy-background-color: var(--bg);
+  --xy-background-pattern-color: #2b313d;
+  --xy-edge-stroke: #5b6475;
+  --xy-edge-stroke-selected: var(--accent);
+  --xy-edge-stroke-width: 1.6;
+  --xy-connectionline-stroke: var(--accent);
+  --xy-connectionline-stroke-width: 2;
+  --xy-handle-background-color: var(--text);
+  --xy-handle-border-color: var(--bg);
+  --xy-minimap-background-color: var(--panel);
+  --xy-minimap-mask-background-color: #0f111599;
+  --xy-minimap-node-background-color: var(--raised);
+  --xy-controls-button-background-color: var(--panel-2);
+  --xy-controls-button-background-color-hover: var(--raised);
+  --xy-controls-button-color: var(--text-2);
+  --xy-controls-button-color-hover: var(--text);
+  --xy-controls-button-border-color: var(--border);
+  --xy-attribution-background-color: transparent;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shared form controls */
+.ui-input,
+.ui-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.ui-input:focus,
+.ui-select:focus {
+  border-color: var(--accent);
+}
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.ui-btn:hover:not(:disabled) {
+  background: var(--raised);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.ui-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ui-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.ui-btn.primary:hover:not(:disabled) {
+  background: #3d8af0;
+  color: #fff;
+}
+.ui-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c3240;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.svelte-flow__attribution {
+  opacity: 0.4;
+}
+.svelte-flow__minimap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.svelte-flow__controls {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: none;
+}
