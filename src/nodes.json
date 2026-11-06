@@ -173,7 +173,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/",
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/",
             "description": "<div><code>true</code> is often said to be defined as 1, which is correct, but true has a wider definition. Any integer which is non-zero is true, in a Boolean sense. So -1, 2 and -200 are all defined as true, too, in a Boolean sense.</div>"
         },
         "ins": [
@@ -367,7 +367,7 @@
             "type": "built-in"
         },
         "methods": [
-            "void analoglWrite(int pin, int value)",
+            "void analogWrite(int pin, int value)",
             "void pinMode(int pin, int mode)",
             "void analogReference(int type)"
         ]
@@ -393,7 +393,6 @@
             "type": "built-in"
         },
         "methods": [
-            "void delay(int ms)",
             "int abs(int x)",
             "int constrain(int x, int a, int b)",
             "int map(int value, int fromLow, int fromHigh, int toLow, int toHigh)",
@@ -493,7 +492,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -510,7 +509,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -527,7 +526,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -543,7 +542,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -559,7 +558,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -576,7 +575,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -593,7 +592,7 @@
             "type": "built-in-constant",
             "returnType": "int",
             "hasUsages": true,
-            "link": "https: //www.arduino.cc/reference/en/language/variables/constants/constants/"
+            "link": "https://www.arduino.cc/reference/en/language/variables/constants/constants/"
         },
         "ins": [
             "in"
@@ -607,7 +606,8 @@
         "color": "blue",
         "extras": {
             "type": "component",
-            "library": "Wire.h"
+            "library": "Wire.h",
+            "className": "TwoWire"
         },
         "methods": [
             "void begin()",
@@ -627,7 +627,8 @@
         "color": "orange",
         "extras": {
             "type": "component",
-            "library": "Adafruit_PWMServoDriver.h"
+            "library": "Adafruit_PWMServoDriver.h",
+            "className": "Adafruit_PWMServoDriver"
         },
         "methods": [
             "void begin(uint8_t prescale=0)",
@@ -686,13 +687,13 @@
         "extras": {
             "type": "component",
             "library": "Adafruit_BMP085.h",
-            "link": "https: //randomnerdtutorials.com/guide-for-bmp180-barometric-sensor-with-arduino/",
+            "link": "https://randomnerdtutorials.com/guide-for-bmp180-barometric-sensor-with-arduino/",
             "description": "Barometric pressure and temperature sensor, by Adafruit"
         },
         "methods": [
             "bool begin(uint8_t mode = BMP085_ULTRAHIGHRES, TwoWire *wire = &Wire)",
             "float readTemperature()",
-            "int32_t readPressure",
+            "int32_t readPressure()",
             "int32_t readSealevelPressure(float altitude_meters = 0)",
             "float readAltitude(float sealevelPressure = 101325)",
             "int16_t readRawTemperature()",
@@ -705,7 +706,7 @@
         "extras": {
             "type": "component",
             "library": "Wire.h",
-            "link": "https: //www.arduino.cc/reference/en/libraries/softwarewire/",
+            "link": "https://www.arduino.cc/reference/en/libraries/softwarewire/",
             "description": "Creates a software I2C/TWI bus on every pins."
         },
         "methods": [
