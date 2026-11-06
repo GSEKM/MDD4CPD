@@ -1,6 +1,5 @@
 <script lang="ts">
     import "@xyflow/svelte/dist/style.css";
-    import { writable } from "svelte/store";
     import {
         SvelteFlow,
         Controls,
@@ -27,8 +26,7 @@
     //@ts-ignore
     import CustomEdge from "./components/edges/CustomEdge.svelte";
     import { edges, nodes } from "./components/code/store";
-    import generateCode from "./components/code/code";
-    import Code from "./components/code/code";
+    import { generateCode } from "./components/code/code";
     import CodeViewer from "./components/codeViewer/codeViewer.svelte";
     // Initialize SvelteFlow hook
     const { screenToFlowPosition, getNodes, updateNode, toObject } =
@@ -65,12 +63,20 @@
             y: event.clientY,
         });
 
+        const nodeData = JSON.parse(data);
+        // Defaults of the original tool (MyEditableNodeModel)
+        if (nodeData.extras && nodeData.extras.type !== "controller") {
+            nodeData.extras.returnType = nodeData.extras.returnType || "byte";
+            if (nodeData.extras.hasValue && nodeData.extras.value === undefined)
+                nodeData.extras.value = "";
+        }
+
         const newNode: Node = {
             id: `${Math.random()}`,
             type: "custom",
             position,
             origin: [0.5, 0.0],
-            data: JSON.parse(data),
+            data: nodeData,
         };
 
         nodes.update((n) => [...n, newNode]);
@@ -159,22 +165,8 @@
         updateNode(edge.source, { position: sourceNode.position });
     };
 
-    export function getRepresentation() {
-        const representation = toObject();
-        return { model: JSON.stringify(representation) };
-    }
-
-    // Stores reativas para `code` e `problems`
-    export const code = writable("");
-    export const problems = writable([]);
-
-    const onSaveClick = () => {
-        const result = generateCode(getRepresentation());
-        if (result) {
-            code.set(result.code);
-            problems.set(result.problems);
-        }
-    };
+    // Code is regenerated on every diagram change, as in the original tool.
+    $: result = generateCode({ nodes: $nodes, edges: $edges });
 
     let colorMode: ColorMode = "dark";
 </script>
@@ -196,7 +188,7 @@
         <Background variant={BackgroundVariant.Dots} />
         <MiniMap pannable zoomable />
     </SvelteFlow>
-    <CodeViewer code={$code} problems={$problems} {onSaveClick} />
+    <CodeViewer code={result.code} problems={result.problems} />
 </main>
 
 <style>

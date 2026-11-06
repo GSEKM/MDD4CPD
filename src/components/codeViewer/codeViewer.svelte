@@ -1,29 +1,50 @@
 <script lang="ts">
     export let code: string = "";
     export let problems: any[] = [];
-    export let onSaveClick: () => void;
+
+    // Same message on several nodes is shown once, with a counter.
+    $: uniqueProblems = problems.reduce((acc, p) => {
+        const found = acc.find((u) => u.message === p.message);
+        if (found) found.count++;
+        else acc.push({ message: p.message, count: 1 });
+        return acc;
+    }, []);
+
+    let copied = false;
+    async function copyCode() {
+        try {
+            await navigator.clipboard.writeText(code);
+            copied = true;
+            setTimeout(() => (copied = false), 1500);
+        } catch {
+            copied = false;
+        }
+    }
 </script>
 
 <div class="code-viewer">
     <!-- Exibir os problemas detectados -->
     {#if problems.length > 0}
         <div class="problems">
-            <h4>Problemas Detectados:</h4>
+            <h4>{problems.length} Problemas Detectados:</h4>
             <ul>
-                {#each problems as problem}
-                    <li>{problem.message}</li>
+                {#each uniqueProblems as problem}
+                    <li>
+                        {problem.message}{problem.count > 1
+                            ? ` (x${problem.count})`
+                            : ""}
+                    </li>
                 {/each}
             </ul>
         </div>
     {/if}
 
     <!-- Exibir o código gerado -->
-    <pre>
-        <code class="language-clike">{code}</code>
-    </pre>
+    <pre><code class="language-clike">{code}</code></pre>
 
-    <!-- Botão de salvar -->
-    <button class="save-button" on:click={onSaveClick}>Salvar</button>
+    <button class="save-button" on:click={copyCode} disabled={!code}
+        >{copied ? "Copiado!" : "Copiar código"}</button
+    >
 </div>
 
 <style>
