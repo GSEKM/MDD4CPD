@@ -12,7 +12,8 @@
 //   - an edge may pass through a chain of value nodes (Port, Parameter(s),
 //     Variable(s), Constant(s), built-in constants) before reaching a method
 //     handle; the values met on the way become the call's arguments;
-//   - value nodes pair their in/out handles by index (in-k <-> out-k).
+//   - value nodes pair their in/out handles by index (in-k <-> out-k);
+//   - statements follow the order in which the links were created.
 
 export type Problem = { message: string; node?: any; port?: any };
 export type GenerationResult = { code: string; problems: Problem[] };
@@ -121,16 +122,6 @@ export function generateCode(model: { nodes: any[]; edges: any[] }): GenerationR
     }
     function edgesOf(node: any): any[] {
         return edges.filter((e) => e.source === node.id || e.target === node.id);
-    }
-    /** Statements are emitted top to bottom, following the diagram layout. */
-    function byTargetPosition(a: any, b: any) {
-        const na = getNode(a.target);
-        const nb = getNode(b.target);
-        const dy = (na?.position?.y ?? 0) - (nb?.position?.y ?? 0);
-        if (dy !== 0) return dy;
-        const ha = getPort(a.target, a.targetHandle)?.handle.index ?? 0;
-        const hb = getPort(b.target, b.targetHandle)?.handle.index ?? 0;
-        return ha - hb;
     }
     /** Value nodes pair in-k with out-k. */
     function getOutPort(inPort: Port): Port | null {
@@ -335,7 +326,6 @@ export function generateCode(model: { nodes: any[]; edges: any[] }): GenerationR
         declaredFunctions.add(name);
         add(`${extras(logic).returnType || "void"} ${name}() {`);
         edgesFrom(findPort(logic, "body", "source"))
-            .sort(byTargetPosition)
             .forEach(processLink);
         add("}");
     }
@@ -348,7 +338,6 @@ export function generateCode(model: { nodes: any[]; edges: any[] }): GenerationR
             .forEach((h) => {
                 add("void ", h.edge, " {");
                 edgesFrom({ node: controller, handle: h, name: h.edge })
-                    .sort(byTargetPosition)
                     .forEach(processLink);
                 add("}");
                 add("");
@@ -360,6 +349,7 @@ export function generateCode(model: { nodes: any[]; edges: any[] }): GenerationR
     /** Follows a chain of value nodes, collecting them as call parameters. */
     function resolveTarget(toPort: Port, params: any[]): Port | null {
         if (!paramTypes.includes(typeOf(toPort.node))) return toPort;
+        if (toPort.name.startsWith("void setValue")) return toPort; // assignment
         params.push(toPort.node);
         const nextFromPort = getOutPort(toPort);
         const nextLink = edgesFrom(nextFromPort)[0];
@@ -385,7 +375,7 @@ export function generateCode(model: { nodes: any[]; edges: any[] }): GenerationR
     }
 
     function addBlock(node: any, outName: string) {
-        const outgoing = edgesFrom(findPort(node, outName, "source")).sort(byTargetPosition);
+        const outgoing = edgesFrom(findPort(node, outName, "source"));
         outgoing.forEach(processLink);
         return outgoing.length;
     }
