@@ -20,10 +20,29 @@ import { Graph, extras, isValue, nameOf, typeOf, type DEdge, type DNode, type Di
 import { Problems, type Problem } from "./problems";
 import { arity, callName, parseSignature, type Signature } from "./signature";
 import { incompatibility } from "./types";
-import { CodeWriter } from "./writer";
+import { CodeWriter, type Entry } from "./writer";
 
 export type { Problem } from "./problems";
-export type GenerationResult = { code: string; problems: Problem[] };
+/**
+ * One generated statement and the diagram elements it comes from. `order` is
+ * its 1-based position among the links leaving the same handle (the order of
+ * the statement in its block); `lines` are 0-based line numbers in `code`.
+ */
+export type Statement = {
+    id: number;
+    sourceNodeId: string;
+    sourceHandleId: string;
+    order: number;
+    edgeIds: string[]; // the first link, then the argument chain
+    nodeIds: string[]; // blocks on the chain, call target last
+    lines: number[];
+};
+
+export type GenerationResult = {
+    code: string;
+    problems: Problem[];
+    statements: Statement[];
+};
 
 const ordinals = [
     "first", "second", "third", "fourth", "fifth", "sixth",
@@ -49,6 +68,7 @@ class Generator {
     private instances = new Map<string, string>(); // node id -> instance name
     private constructorArgs = new Map<string, string>(); // node id -> "(a, b)"
     private declaredFunctions = new Set<string>();
+    private statements: Statement[] = [];
 
     constructor(private g: Graph) {
         this.controllers = g.nodes.filter((n) => typeOf(n) === "controller");
@@ -80,12 +100,21 @@ class Generator {
         if (functions.length > 0) {
             this.out.blank();
             this.out.comment("Functions");
-            functions.forEach((l) => this.out.line(l));
+            this.out.append(functions);
         }
         this.out.blank();
         this.out.comment("Micro-controller's Lifecycle");
-        lifecycle.forEach((l) => this.out.line(l));
-        return { code: this.out.toString(), problems: this.problems.list };
+        this.out.append(lifecycle);
+
+        const entries = this.out.entries();
+        entries.forEach((e, i) => {
+            if (e.tag !== null) this.statements[e.tag].lines.push(i);
+        });
+        return {
+            code: this.out.toString(),
+            problems: this.problems.list,
+            statements: this.statements,
+        };
     }
 
     // #region Model checks
@@ -201,7 +230,7 @@ class Generator {
     }
 
     /** Global function declarations as lines. */
-    private functionsSection(): string[] {
+    private functionsSection(): Entry[] {
         const w = new CodeWriter();
         this.g.nodes
             .filter((n) => typeOf(n) === "logic" && nameOf(n) === "Function")
@@ -217,7 +246,7 @@ class Generator {
     }
 
     /** setup()/loop() as lines. */
-    private lifecycleSection(): string[] {
+    private lifecycleSection(): Entry[] {
         if (!this.controller) return [];
         const w = new CodeWriter();
         this.g
@@ -284,7 +313,7 @@ class Generator {
     }
 
     /** Follows a chain of value blocks, collecting them as arguments. */
-    private resolve(toPort: Port, args: Arg[], seen: Set<string>): Port | null {
+    private resolve(toPort: Port, args: Arg[], seen: Set<string>, chain: DEdge[]): Port | null {
         if (!isValue(toPort.node)) return toPort;
         if (toPort.name.startsWith("void setValue")) return toPort; // assignment
         if (seen.has(toPort.node.id)) return null; // cycle
@@ -292,7 +321,9 @@ class Generator {
         args.push(...this.argsOf(toPort.node));
         const next = this.g.from(this.g.pairedOut(toPort))[0];
         const nextPort = next && this.g.targetOf(next);
-        return nextPort ? this.resolve(nextPort, args, seen) : null;
+        if (!nextPort) return null;
+        chain.push(next);
+        return this.resolve(nextPort, args, seen, chain);
     }
 
     private emitLink(w: CodeWriter, edge: DEdge) {
@@ -304,10 +335,21 @@ class Generator {
         const toPort = this.g.targetOf(edge);
         if (!fromPort || !toPort) return;
         const args: Arg[] = [];
-        const target = this.resolve(toPort, args, new Set());
+        const chain: DEdge[] = [edge];
+        const target = this.resolve(toPort, args, new Set(), chain);
+        const statement: Statement = {
+            id: this.statements.length,
+            sourceNodeId: fromPort.node.id,
+            sourceHandleId: fromPort.handle.id,
+            order: this.g.from(fromPort).indexOf(edge) + 1,
+            edgeIds: chain.map((e) => edgeId(this.g, e)),
+            nodeIds: [...new Set(chain.map((e) => e.target))],
+            lines: [],
+        };
+        this.statements.push(statement);
         if (!target) return;
         this.depth++;
-        this.emitCall(w, target, args, fromPort);
+        w.withTag(statement.id, () => this.emitCall(w, target, args, fromPort));
         this.depth--;
     }
 
@@ -411,7 +453,11 @@ class Generator {
     // #endregion
 }
 
-function lines(w: CodeWriter): string[] {
-    const text = w.toString().replace(/\n$/, "");
-    return text === "" ? [] : text.split("\n");
+function lines(w: CodeWriter): Entry[] {
+    return w.entries();
+}
+
+/** Edge id, or a stable positional id for models whose edges have none. */
+function edgeId(g: Graph, e: DEdge): string {
+    return e.id ?? `edge-${g.edges.indexOf(e)}`;
 }
