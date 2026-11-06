@@ -11,6 +11,7 @@
 // importer's layout for the relative offset.
 
 import type { DEdge, DNode, Diagram } from "../generator/graph";
+import { estimateSize } from "./ino";
 
 type Pos = { x: number; y: number };
 
@@ -110,6 +111,25 @@ export function mergeDiagram(current: Diagram, imported: Diagram): MergeResult {
         }
     }
 
+    // New blocks must not cover others: push each one down until it is free.
+    const GAP = 24;
+    const boxes = imported.nodes
+        .filter((n) => byId.has(ids.get(n.id)!))
+        .map((n) => ({ ...placed.get(n.id)!, ...size(byId.get(ids.get(n.id)!)!) }));
+    imported.nodes.forEach((n) => {
+        if (byId.has(ids.get(n.id)!)) return;
+        const box = { ...placed.get(n.id)!, ...estimateSize(n) };
+        for (let guard = 0; guard < 200; guard++) {
+            const hit = boxes.find(
+                (o) => box.x < o.x + o.width + GAP && o.x < box.x + box.width + GAP && box.y < o.y + o.height + GAP && o.y < box.y + box.height + GAP,
+            );
+            if (!hit) break;
+            box.y = hit.y + hit.height + GAP;
+        }
+        boxes.push(box);
+        placed.set(n.id, { x: box.x, y: box.y });
+    });
+
     const nodes: DNode[] = imported.nodes.map((n) => {
         const id = ids.get(n.id)!;
         const old: any = byId.get(id);
@@ -154,6 +174,12 @@ export function mergeDiagram(current: Diagram, imported: Diagram): MergeResult {
     };
 }
 
+function size(n: any): { width: number; height: number } {
+    const w = n.computed?.width ?? n.measured?.width;
+    const h = n.computed?.height ?? n.measured?.height;
+    return w && h ? { width: w, height: h } : n.data?.handles ? estimateSize(n) : { width: 200, height: 100 };
+}
+
 function topLeft(n: any): Pos {
     const [ox, oy] = n.origin ?? [0, 0];
     const w = n.computed?.width ?? n.measured?.width ?? 0;
@@ -183,15 +209,25 @@ export type EditOutcome =
     /** Parts of the code have no block equivalent; applying would drop them. */
     | { kind: "blocked"; result: SketchImport; reasons: ImportNote[]; merge: MergeResult; code: string };
 
+/** What the code editor shows after an edit was evaluated. */
+export type EditStatus =
+    | { kind: "unchanged"; code: string }
+    | { kind: "applied"; code: string; added: number; removed: number; skipped: ImportNote[] }
+    | { kind: "blocked"; reasons: ImportNote[]; missing: string[] };
+
 /** Decides what an edit of the code does to the diagram on the canvas. */
 export function evaluateEdit(text: string, current: Diagram, palette: any[]): EditOutcome {
     const result = importSketch(text, palette);
     const code = generateCode(result.diagram).code;
     const before = current.nodes.length ? generateCode(current).code : "";
     const reasons = [
-        ...result.missingIncludes.map((h) => ({ line: 0, severity: "warning" as const, message: `No block provides ${h}` })),
+        ...result.missingIncludes.map((h) => ({
+            line: text.split("\n").findIndex((l) => l.includes("#") && l.includes(h)) + 1,
+            severity: "warning" as const,
+            message: `No block provides ${h}: import its library`,
+        })),
         ...result.notes.filter((n) => n.severity === "warning"),
-    ];
+    ].sort((a, b) => a.line - b.line);
     const merge = () => mergeDiagram(current, result.diagram);
     if (reasons.length) return { kind: "blocked", result, reasons, merge: merge(), code };
     if (code === before) return { kind: "unchanged", result };

@@ -102,3 +102,28 @@ describe("code edits", () => {
         expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     });
 });
+
+describe("placement", () => {
+    it("does not put new blocks on top of existing ones", () => {
+        const d = blink();
+        const code = generateCode(d).code.replace("delay(1000);", 'delay(7);\n    Serial.println("a");\n    Serial.println(3.5);');
+        const out = evaluateEdit(code, d, builtInPalette);
+        if (out.kind !== "apply") throw new Error(out.kind);
+        const box = (n: any) => {
+            const w = n.computed?.width ?? 200;
+            const h = n.computed?.height ?? 100;
+            const [ox, oy] = n.origin ?? [0, 0];
+            return { x: n.position.x - ox * w, y: n.position.y - oy * h, w, h };
+        };
+        const ids = new Set(d.nodes.map((n: any) => n.id));
+        const all = out.merge.diagram.nodes.map((n: any) => ({ id: n.id, ...box(ids.has(n.id) ? { ...n, computed: { width: 200, height: 100 } } : n) }));
+        const fresh = all.filter((b) => !ids.has(b.id));
+        expect(fresh.length).toBeGreaterThan(0);
+        for (const a of fresh)
+            for (const b of all)
+                if (a !== b) {
+                    const overlap = a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+                    expect(overlap, `${a.id} overlaps ${b.id}`).toBe(false);
+                }
+    });
+});

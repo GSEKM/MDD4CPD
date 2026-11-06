@@ -17,6 +17,8 @@
     import CommandPalette from "./components/CommandPalette.svelte";
     import ImportReport from "./components/ImportReport.svelte";
     import { importSketch, type SketchImport } from "./importer/ino";
+    import { evaluateEdit, type EditStatus } from "./importer/sync";
+    import { importLibrariesFor } from "./libraries/store";
     //@ts-ignore
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import Toolbar from "./components/Toolbar.svelte";
@@ -193,6 +195,33 @@
     }
     // #endregion
 
+    // #region Code editing: the canvas follows the code
+    let editSnapshot: Diagram | null = null;
+
+    /** Applies edited code to the canvas, keeping the blocks it still describes. */
+    function applyCode(text: string, force: boolean): EditStatus {
+        const out = evaluateEdit(text, { nodes: $nodes as any, edges: $edges }, $palette);
+        if (out.kind === "unchanged") return { kind: "unchanged", code: result.code };
+        if (out.kind === "blocked" && !force)
+            return { kind: "blocked", reasons: out.reasons, missing: out.result.missingIncludes };
+        const first = $nodes.length === 0;
+        nodes.set(out.merge.diagram.nodes as any);
+        edges.set(out.merge.diagram.edges as any);
+        if (first) setTimeout(tidy, 120);
+        return {
+            kind: "applied",
+            code: out.code,
+            added: out.merge.added,
+            removed: out.merge.removed,
+            skipped: out.kind === "blocked" ? out.reasons : [],
+        };
+    }
+
+    function revertEdit() {
+        if (editSnapshot) load(editSnapshot);
+    }
+    // #endregion
+
     function clear() {
         if (confirm("Remove every block from the canvas?")) {
             nodes.set([]);
@@ -326,6 +355,11 @@
                 hovered={$hoveredStatement}
                 on:hover={(e) => hoveredStatement.set(e.detail)}
                 {fileName}
+                {applyCode}
+                importLibraries={importLibrariesFor}
+                on:startEdit={() => (editSnapshot = serialize())}
+                on:stopEdit={() => (editSnapshot = null)}
+                on:revert={revertEdit}
                 on:focus={(e) => focusNode(e.detail)}
             />
         </div>

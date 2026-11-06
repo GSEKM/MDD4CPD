@@ -120,6 +120,18 @@ function splitTop(toks: Tok[], sep: string): Tok[][] {
     return parts.length === 1 && parts[0].length === 0 ? [] : parts;
 }
 
+/** Size of a block before the browser has measured it. */
+export function estimateSize(n: DNode): { width: number; height: number } {
+    const d = n.data;
+    const rows = Math.max(0, ...d.handles.map((h: HandleInfo) => h.index + 1));
+    const editors = ["hasReturnType", "hasPortType", "hasUsername", "hasValue"].filter((k) => d.extras[k]).length;
+    const longest = Math.max(8, ...d.handles.map((h: HandleInfo) => h.edge.length));
+    return {
+        width: Math.min(320, 60 + longest * 6.5),
+        height: 44 + editors * 29 + Math.min(rows, 10) * 26 + (d.extras.hasUsages ? 32 : 0),
+    };
+}
+
 /** Brackets that are never closed, or closed without being opened. */
 function unbalanced(toks: Tok[]): { line: number; message: string }[] {
     const pairs: Record<string, string> = { ")": "(", "]": "[", "}": "{" };
@@ -711,19 +723,7 @@ export function importSketch(source: string, palette: any[]): SketchImport {
     // #endregion
 
     // #region Layout (estimated sizes; the editor re-runs it with real ones)
-    const estimate = (n: DNode) => {
-        const d = n.data;
-        const rows = Math.max(0, ...d.handles.map((h: HandleInfo) => h.index + 1));
-        const editors = ["hasReturnType", "hasPortType", "hasUsername", "hasValue"].filter((k) => d.extras[k]).length;
-        const longest = Math.max(8, ...d.handles.map((h: HandleInfo) => h.edge.length));
-        return {
-            id: n.id,
-            position: n.position!,
-            data: d,
-            width: Math.min(320, 60 + longest * 6.5),
-            height: 44 + editors * 29 + Math.min(rows, 10) * 26 + (d.extras.hasUsages ? 32 : 0),
-        };
-    };
+    const estimate = (n: DNode) => ({ id: n.id, position: n.position!, data: n.data, ...estimateSize(n) });
     const positions = tidyLayout(b.nodes.map(estimate), b.edges, []);
     b.nodes.forEach((n) => (n.position = positions.get(n.id) ?? { x: 0, y: 0 }));
     // #endregion
