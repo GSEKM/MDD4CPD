@@ -63,6 +63,18 @@
     }),
   );
 
+  // Long classes (imported libraries) show the first rows plus connected ones.
+  const COLLAPSED_ROWS = 8;
+  $: collapsible = rows.length > COLLAPSED_ROWS + 2;
+  $: visibleRows =
+    collapsible && !data.expanded
+      ? rows.filter((r, i) => i < COLLAPSED_ROWS || isConnected(r.left) || isConnected(r.right))
+      : rows;
+  function toggleExpanded() {
+    updateNodeData(id, { expanded: !data.expanded });
+    setTimeout(() => updateNodeInternals(id), 0);
+  }
+
   function setExtra(key: string, value: string) {
     if (key === "value" && data.name === "Function") value = value.replace(/\s/g, "");
     updateNodeData(id, { extras: { ...extras, [key]: value } });
@@ -213,7 +225,7 @@
   {/if}
 
   <div class="rows">
-    {#each rows as row (row.left?.id ?? row.right?.id)}
+    {#each visibleRows as row (row.left?.id ?? row.right?.id)}
       {@const sig = splitSignature(row.left?.edge ?? row.right?.edge ?? "")}
       {@const same = row.left && row.right && row.left.edge === row.right.edge}
       <div class="row" class:method={same && sig}>
@@ -237,6 +249,12 @@
       </div>
     {/each}
   </div>
+
+  {#if collapsible}
+    <button class="more nodrag" on:click={toggleExpanded}>
+      {data.expanded ? "Show fewer" : `Show all ${rows.length} functions`}
+    </button>
+  {/if}
 
   {#if extras.hasUsages || extras.type === "variable"}
     <footer class="nodrag">
@@ -423,6 +441,19 @@
     color: var(--text-2);
     font-family: var(--mono);
     font-size: 10px;
+  }
+
+  .more {
+    display: block;
+    width: 100%;
+    padding: 5px 12px 7px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 11px;
+    text-align: left;
+  }
+  .more:hover {
+    color: var(--accent);
   }
 
   footer {
