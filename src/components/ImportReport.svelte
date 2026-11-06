@@ -1,8 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import type { SketchImport } from "../importer/ino";
-  import { findLibraryForHeader, importLibrary, loadIndex } from "../libraries/importer";
-  import { addLibrary } from "../libraries/store";
+  import { importLibrariesFor } from "../libraries/store";
 
   export let fileName: string;
   export let result: SketchImport;
@@ -20,29 +19,7 @@
 
   async function importMissing() {
     busy = true;
-    status = "Loading the Arduino library index…";
-    const failed: string[] = [];
-    try {
-      const index = await loadIndex();
-      for (const header of result.missingIncludes) {
-        const lib = findLibraryForHeader(index, header);
-        if (!lib) {
-          failed.push(`${header} (no library provides it)`);
-          continue;
-        }
-        status = `Importing ${lib.name} ${lib.version} for ${header}…`;
-        try {
-          const imported = await importLibrary(lib);
-          if (!imported.components.some((c) => c.extras.library === header))
-            failed.push(`${lib.name} ${lib.version} does not provide ${header}`);
-          addLibrary(imported);
-        } catch (e: any) {
-          failed.push(`${header}: ${e?.message || e}`);
-        }
-      }
-    } catch (e: any) {
-      failed.push(e?.message || String(e));
-    }
+    const failed = await importLibrariesFor(result.missingIncludes, (s) => (status = s));
     busy = false;
     status = failed.length ? `Could not import: ${failed.join("; ")}` : "";
     dispatch("retry");
