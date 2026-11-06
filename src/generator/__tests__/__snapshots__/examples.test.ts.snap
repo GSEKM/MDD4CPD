@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`examples > Blink generates the expected sketch 1`] = `
+"/* Code generated for Arduino Uno
+Analog ports 0/6
+Digital ports 0/14 */
+
+// Micro-controller's Lifecycle
+void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(1000);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(1000);
+}
+"
+`;
+
+exports[`examples > Servo and condition generates the expected sketch 1`] = `
+"/* Code generated for Arduino Uno
+Analog ports 0/6
+Digital ports 1/14 (9) */
+
+// Libraries
+#include <Servo.h>
+
+// Objects
+Servo servo0;
+
+// Constants
+const int LIMIT = 100;
+
+// Variables
+int angle = 90;
+
+// Functions
+void waitHalf() {
+    delay(500);
+}
+
+// Micro-controller's Lifecycle
+void setup() {
+    servo0.attach(9);
+}
+
+void loop() {
+    servo0.write(angle);
+    if (angle < LIMIT) {
+        waitHalf();
+    }
+}
+"
+`;

@@ -1,11 +1,13 @@
-import { Position } from "@xyflow/svelte";
+// Plain strings (equal to Svelte Flow's Position values) so that this module,
+// the examples and the generator can run outside the browser (tests, CLI).
+type Side = "left" | "right";
 
 export interface HandleInfo {
     id: string;
     edge: string; // label; for methods, the full C signature
     index: number; // in-k on the left pairs with out-k on the right
     type: "source" | "target";
-    position: Position;
+    position: Side;
     isConnectable: boolean;
 }
 
@@ -20,7 +22,7 @@ export function addHandle(
         edge,
         index,
         type,
-        position: type === "source" ? Position.Right : Position.Left,
+        position: type === "source" ? "right" : "left",
         isConnectable: true,
     });
 }

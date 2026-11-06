@@ -35,18 +35,22 @@ function handleId(node: Node, label: string, type: "source" | "target") {
     return h.id;
 }
 
+/** Adds an edge between two handles, given by their labels. */
+export function link(edges: Edge[], from: Node, fromLabel: string, to: Node, toLabel: string) {
+    const sourceHandle = handleId(from, fromLabel, "source");
+    const targetHandle = handleId(to, toLabel, "target");
+    edges.push({
+        id: `xy-edge__${from.id}${sourceHandle}-${to.id}${targetHandle}`,
+        source: from.id,
+        sourceHandle,
+        target: to.id,
+        targetHandle,
+    });
+}
+
 function linker(edges: Edge[]) {
-    return (from: Node, fromLabel: string, to: Node, toLabel: string) => {
-        const sourceHandle = handleId(from, fromLabel, "source");
-        const targetHandle = handleId(to, toLabel, "target");
-        edges.push({
-            id: `xy-edge__${from.id}${sourceHandle}-${to.id}${targetHandle}`,
-            source: from.id,
-            sourceHandle,
-            target: to.id,
-            targetHandle,
-        });
-    };
+    return (from: Node, fromLabel: string, to: Node, toLabel: string) =>
+        link(edges, from, fromLabel, to, toLabel);
 }
 
 function blink(): Diagram {
