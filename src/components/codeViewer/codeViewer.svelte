@@ -5,12 +5,39 @@
   import "prismjs/components/prism-arduino";
   import { createEventDispatcher } from "svelte";
   import type { Problem, Severity } from "../../generator/problems";
+  import type { Statement } from "../../generator/generate";
 
   export let code: string = "";
   export let problems: Problem[] = [];
   export let fileName: string = "sketch";
+  export let statements: Statement[] = [];
+  export let hovered: number | null = null;
 
-  const dispatch = createEventDispatcher<{ focus: string }>();
+  const dispatch = createEventDispatcher<{ focus: string; hover: number | null }>();
+
+  // line -> statement (innermost statement that produced the line)
+  $: lineStatement = (() => {
+    const map = new Map<number, number>();
+    statements.forEach((s) => s.lines.forEach((l) => map.set(l, s.id)));
+    return map;
+  })();
+  $: litLines = hovered === null ? [] : statements[hovered]?.lines ?? [];
+
+  const LINE_HEIGHT = 20; // matches .code line-height (12.5px * 1.6)
+  const PAD_TOP = 14;
+  let lastLine = -1;
+  function onCodeMove(e: MouseEvent) {
+    const el = e.currentTarget as HTMLElement;
+    const y = e.clientY - el.getBoundingClientRect().top + el.scrollTop - PAD_TOP;
+    const line = Math.floor(y / LINE_HEIGHT);
+    if (line === lastLine) return;
+    lastLine = line;
+    dispatch("hover", lineStatement.get(line) ?? null);
+  }
+  function onCodeLeave() {
+    lastLine = -1;
+    dispatch("hover", null);
+  }
 
   let tab: "code" | "problems" = "code";
 
@@ -107,7 +134,11 @@
         The generated Arduino sketch will appear here
       </div>
     {:else}
-    <div class="code">
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="code" on:mousemove={onCodeMove} on:mouseleave={onCodeLeave}>
+      <div class="marks" aria-hidden="true">
+        {#each litLines as l}<div class="mark" style="top: {PAD_TOP + l * LINE_HEIGHT}px"></div>{/each}
+      </div>
       <div class="gutter" aria-hidden="true">
         {#each Array(lineCount) as _, i}<span>{i + 1}</span>{/each}
       </div>
@@ -222,13 +253,27 @@
   }
 
   .code {
+    position: relative;
     flex: 1;
     display: flex;
     overflow: auto;
     font-family: var(--mono);
     font-size: 12.5px;
-    line-height: 1.6;
+    line-height: 20px;
     background: var(--bg);
+  }
+  .marks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .mark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: #4f9dff1c;
+    box-shadow: inset 2px 0 0 var(--accent);
   }
   .gutter {
     position: sticky;

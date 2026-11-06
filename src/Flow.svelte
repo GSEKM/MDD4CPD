@@ -18,7 +18,9 @@
     //@ts-ignore
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import Toolbar from "./components/Toolbar.svelte";
-    import { edges, nodes, problems } from "./components/code/store";
+    import { edges, generation, hoveredStatement, nodes, problems } from "./components/code/store";
+    import FlowEdge from "./components/edges/FlowEdge.svelte";
+    import { tidyLayout } from "./components/layout";
     import { generateCode } from "./generator/generate";
     import { examples, type Diagram } from "./components/examples";
     import { categoryOf } from "./components/categories";
@@ -27,6 +29,8 @@
     const { screenToFlowPosition, fitView } = useSvelteFlow();
 
     const nodeTypes: NodeTypes = { custom: CustomNode };
+    // Every link uses FlowEdge (also links saved before it existed).
+    const edgeTypes = { default: FlowEdge };
 
     // #region Drag and drop from the palette
     const onDragOver = (event: DragEvent) => {
@@ -79,9 +83,10 @@
     // Code is regenerated on every diagram change, as in the original tool.
     $: result =
         $nodes.length === 0
-            ? { code: "", problems: [] }
+            ? { code: "", problems: [], statements: [] }
             : generateCode({ nodes: $nodes, edges: $edges });
     $: problems.set(result.problems);
+    $: generation.set(result);
     $: controller = $nodes.find((n: any) => n.data?.extras?.type === "controller");
 
     // #region Diagram persistence (browser storage) and files
@@ -172,6 +177,22 @@
     $: fileName = (controller?.data?.name || "sketch").toString().toLowerCase().replace(/\W+/g, "_");
     // #endregion
 
+    /** Deterministic layered layout (see components/layout.ts). */
+    function tidy() {
+        const positions = tidyLayout($nodes as any, $edges, result.statements);
+        nodes.update((ns) =>
+            ns.map((n: any) => {
+                const p = positions.get(n.id);
+                if (!p) return n;
+                const w = n.computed?.width ?? 0;
+                const h = n.computed?.height ?? 0;
+                const [ox, oy] = n.origin ?? [0, 0];
+                return { ...n, position: { x: p.x + ox * w, y: p.y + oy * h } };
+            }),
+        );
+        setTimeout(() => fitView({ padding: 0.12, duration: 400, maxZoom: 1 }), 30);
+    }
+
     /** Zooms to a node and selects it (used by the problems list). */
     function focusNode(id: string) {
         nodes.update((ns) => ns.map((n) => ({ ...n, selected: n.id === id })));
@@ -217,6 +238,7 @@
         on:save={save}
         on:clear={clear}
         on:command={() => (paletteMode = "all")}
+        on:tidy={tidy}
     />
     <div class="workspace">
         <Sidebar nodes={$palette} on:libraries={() => (paletteMode = "libraries")} />
@@ -225,6 +247,7 @@
                 {nodes}
                 {edges}
                 {nodeTypes}
+                {edgeTypes}
                 colorMode="dark"
                 deleteKey={["Backspace", "Delete"]}
                 minZoom={0.2}
@@ -273,6 +296,9 @@
             <CodeViewer
                 code={result.code}
                 problems={result.problems}
+                statements={result.statements}
+                hovered={$hoveredStatement}
+                on:hover={(e) => hoveredStatement.set(e.detail)}
                 {fileName}
                 on:focus={(e) => focusNode(e.detail)}
             />

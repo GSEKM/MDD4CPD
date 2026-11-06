@@ -6,7 +6,7 @@
     useSvelteFlow,
     useUpdateNodeInternals,
   } from "@xyflow/svelte";
-  import { edges, problemsByNode } from "../code/store";
+  import { edges, hoveredStatement, problemsByNode, statementsByNode } from "../code/store";
   import { categoryOf } from "../categories";
   import {
     addHandle,
@@ -53,6 +53,8 @@
   $: cat = categoryOf(extras.type);
   $: handles = (data.handles || []) as HandleInfo[];
   $: nodeProblems = $problemsByNode.get(id) || [];
+  $: lit = $hoveredStatement !== null && ($statementsByNode.get(id) || []).includes($hoveredStatement);
+  $: dim = $hoveredStatement !== null && !lit;
 
   // One row per index: in-k on the left, out-k on the right.
   $: rows = Array.from(
@@ -137,6 +139,8 @@
   class="node"
   class:selected
   class:has-problems={nodeProblems.length > 0}
+  class:lit
+  class:dim
   style="--cat: {cat.color}"
 >
   <header>
@@ -291,7 +295,7 @@
     color: var(--text);
     box-shadow: 0 6px 18px #00000055;
     font-size: 12px;
-    transition: border-color 0.12s, box-shadow 0.12s;
+    transition: border-color 0.12s, box-shadow 0.12s, opacity 0.12s;
   }
   .node.selected {
     border-color: var(--accent);
@@ -299,6 +303,13 @@
   }
   .node.has-problems {
     border-color: var(--warn);
+  }
+  .node.lit {
+    border-color: var(--cat);
+    box-shadow: 0 0 0 1px var(--cat), 0 8px 24px #00000066;
+  }
+  .node.dim {
+    opacity: 0.45;
   }
 
   header {
