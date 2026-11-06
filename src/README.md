@@ -29,6 +29,9 @@ diagram (nodes + links) <------------------ drag / Ctrl+K --------------------+
 - `libraries/headerParser.ts` — rule-based extraction of public classes/methods
   from library headers (rules documented at the top of the file).
 - `libraries/importer.ts` — library index search, download, SHA-256 check, unzip.
+- `importer/ino.ts` — deterministic .ino -> diagram conversion (the inverse of the
+  generator; supported subset and ordering rules at the top of the file). Generated
+  sketches round-trip exactly; unsupported constructs are reported with line numbers.
 - `palette/` — built-in palette: `nodes.json` (core blocks, hand-written) plus
   `components.generated.json`, produced by `npm run build:palette` from the
   versions pinned in `pinned-libraries.json`.
