@@ -84,7 +84,7 @@
       {/if}
     </div>
     <span class="sep"></span>
-    <button class="ui-btn" on:click={() => fileInput.click()} title="Open a saved diagram (.json)">
+    <button class="ui-btn" on:click={() => fileInput.click()} title="Open a diagram (.json) or import an Arduino sketch (.ino)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         ><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /></svg
       >
@@ -131,7 +131,7 @@
       >
       Clear
     </button>
-    <input type="file" accept=".json,application/json" bind:this={fileInput} on:change={onFile} hidden />
+    <input type="file" accept=".json,.ino,application/json" bind:this={fileInput} on:change={onFile} hidden />
   </div>
 
   <div class="status">

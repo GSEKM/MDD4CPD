@@ -12,6 +12,7 @@
 //       f(args); obj.f(args); Serial.f(args); Class::f(args); name();
 //       var = value;   if (x op y) {...} else {...}   while (x op y) {...}
 //   - arguments: pin numbers -> Port, HIGH/OUTPUT/true... -> built-in constant,
+//     consecutive number literals of one type -> one Parameter(s) ("16, 2"),
 //     known names -> Variable/Constant, literals -> Parameter(s); any other
 //     expression without commas is kept verbatim in a Parameter(s) block.
 // Anything else (for, switch, locals, ++, functions with parameters ...) is
@@ -349,10 +350,6 @@ export function importSketch(source: string, palette: any[]): SketchImport {
                     value = splitTop(init.slice(1, matching(init, 0)), ",").map(render).join(",");
                 } else {
                     value = render(init);
-                    if (value.includes(",")) {
-                        b.note(line, `Initial value of ${name} contains commas and was dropped: ${value}`);
-                        value = "";
-                    }
                 }
             }
             if (isConst) {
@@ -612,7 +609,8 @@ export function importSketch(source: string, palette: any[]): SketchImport {
                 { id: `source-${index}`, edge: setter, index, type: "source", position: "right", isConnectable: true },
                 { id: `target-${index}`, edge: setter, index, type: "target", position: "left", isConnectable: true },
             );
-            const sig = parseSignature(setter)!;
+            // the assigned value takes the variable's type (the setter is generic)
+            const sig = parseSignature(`void setValue(${variable.data.extras.returnType} value)`)!;
             chainCall(src, `target-${index}`, variable, sig, [ts.slice(2)], line);
             return;
         }
@@ -632,7 +630,24 @@ export function importSketch(source: string, palette: any[]): SketchImport {
     /** src -> arg1 -> arg2 ... -> target handle. */
     function chainCall(src: Source, handleId: string, node: DNode, sig: Signature, args: Tok[][], line: number) {
         const uses: Use[] = [];
+        // Consecutive number literals of the same type share one Parameter(s)
+        // block ("16, 2"), as Parameter(s) holds a list; pins stay Port blocks.
+        const literal = (k: number) => {
+            const ts = args[k];
+            if (ts.length !== 1 || ts[0].t !== "num") return null;
+            if (/pin/i.test(sig.params[k]?.name ?? "") && /^\d+$/.test(ts[0].v) && Number(ts[0].v) < 100) return null;
+            return literalType(ts[0].v);
+        };
         for (let k = 0; k < args.length; k++) {
+            const type = literal(k);
+            let end = k + 1;
+            while (type && end < args.length && literal(end) === type) end++;
+            if (type && end - k > 1) {
+                const values = args.slice(k, end).map((a) => a[0].v).join(", ");
+                uses.push(b.use(b.valueBlock(`param:${type}:${values}`, () => b.addNode(b.def("Parameter(s)"), { returnType: type, value: values }))));
+                k = end - 1;
+                continue;
+            }
             const use = value(args[k], sig.params[k] ?? null, line);
             if (!use) return;
             uses.push(use);
@@ -648,7 +663,8 @@ export function importSketch(source: string, palette: any[]): SketchImport {
     /** The value block for an argument or operand, with a fresh usage. */
     function value(ts: Tok[], param: Param | null, line: number): Use | null {
         const text = render(ts);
-        const expected = param?.type || "int";
+        const generic = !param?.type || /^(<T>|T|\?|any\??|auto)$/.test(param.type.trim());
+        const expected = generic ? "int" : param!.type.replace(/\bconst\b|&/g, "").trim();
         if (ts.length === 1) {
             const [t] = ts;
             if (t.t === "num" && /pin/i.test(param?.name ?? "") && /^\d+$/.test(t.v) && Number(t.v) < 100)
@@ -667,10 +683,6 @@ export function importSketch(source: string, palette: any[]): SketchImport {
                 const bic = palette.find((n) => n.extras?.type === "built-in-constant" && n.name === t.v);
                 if (bic) return b.use(b.valueBlock(`bic:${t.v}`, () => b.addNode(bic)));
             }
-        }
-        if (text.includes(",")) {
-            b.note(line, `Argument \`${text}\` contains commas, which a Parameter block cannot hold; statement skipped`);
-            return null;
         }
         b.note(line, `\`${text}\` kept as text in a Parameter(s) block`, "info");
         return b.use(b.valueBlock(`param:${expected}:${text}`, () => b.addNode(b.def("Parameter(s)"), { returnType: expected, value: text })));

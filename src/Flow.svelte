@@ -15,6 +15,8 @@
     import Sidebar from "./components/sidebar/Sidebar.svelte";
     import { palette } from "./libraries/store";
     import CommandPalette from "./components/CommandPalette.svelte";
+    import ImportReport from "./components/ImportReport.svelte";
+    import { importSketch, type SketchImport } from "./importer/ino";
     //@ts-ignore
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import Toolbar from "./components/Toolbar.svelte";
@@ -65,6 +67,12 @@
 
     const onDrop = (event: DragEvent) => {
         if (!event.dataTransfer) return;
+        const file = event.dataTransfer.files?.[0];
+        if (file) {
+            event.preventDefault();
+            open(file);
+            return;
+        }
         const data = event.dataTransfer.getData("application/svelteflow");
         if (!data) return; // not dragged from the palette
         addBlock(JSON.parse(data), { x: event.clientX, y: event.clientY });
@@ -158,14 +166,32 @@
     }
 
     async function open(file: File) {
+        if (/\.(ino|cpp|c|h)$/i.test(file.name)) return openSketch(file.name, await file.text());
         try {
             const diagram = JSON.parse(await file.text());
             if (!Array.isArray(diagram.nodes)) throw new Error("no nodes");
             if (confirmReplace()) load(diagram);
         } catch {
-            alert("This file is not an MDD4CPD diagram.");
+            alert("This file is neither an MDD4CPD diagram (.json) nor an Arduino sketch (.ino).");
         }
     }
+
+    // #region Sketch (.ino) import
+    let sketch: { name: string; text: string; result: SketchImport } | null = null;
+
+    async function openSketch(name: string, text: string, replace = true) {
+        const result = importSketch(text, $palette);
+        if (replace && !confirmReplace()) return;
+        await load(result.diagram);
+        // re-arrange once the blocks have been measured
+        setTimeout(tidy, 120);
+        sketch = { name, text, result };
+    }
+
+    function retrySketch() {
+        if (sketch) openSketch(sketch.name, sketch.text, false);
+    }
+    // #endregion
 
     function clear() {
         if (confirm("Remove every block from the canvas?")) {
@@ -305,6 +331,15 @@
         </div>
     </div>
 </div>
+
+{#if sketch}
+    <ImportReport
+        fileName={sketch.name}
+        result={sketch.result}
+        on:close={() => (sketch = null)}
+        on:retry={retrySketch}
+    />
+{/if}
 
 {#if paletteMode}
     <CommandPalette

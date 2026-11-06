@@ -23,6 +23,7 @@ export type LibraryEntry = {
     checksum: string; // "SHA-256:<hex>"
     size: number;
     architectures: string[];
+    providesIncludes: string[];
 };
 
 export type PaletteNode = {
@@ -70,6 +71,7 @@ export function toEntry(l: any): LibraryEntry {
         checksum: l.checksum ?? "",
         size: l.size ?? 0,
         architectures: l.architectures ?? [],
+        providesIncludes: l.providesIncludes ?? [],
     };
 }
 
@@ -119,6 +121,30 @@ export function searchIndex(index: LibraryEntry[], query: string, limit = 50): L
     return scored.slice(0, limit).map((s) => s[1]);
 }
 // #endregion
+
+/**
+ * The library that provides a header. Ranking (deterministic):
+ *   0. named like the header ("Servo.h" -> "Servo", "Adafruit_BMP085.h" ->
+ *      "Adafruit BMP085 Library") — not every library fills providesIncludes;
+ *   1. lists the header first in providesIncludes;
+ *   2. lists it anywhere in providesIncludes;
+ * then the exact name, the shortest name, alphabetical.
+ */
+export function findLibraryForHeader(index: LibraryEntry[], header: string): LibraryEntry | null {
+    const base = header.replace(/\.(h|hpp)$/i, "");
+    const norm = (s: string) => s.toLowerCase().replace(/[\s_-]+/g, "").replace(/library$/, "");
+    const score = (l: LibraryEntry) =>
+        norm(l.name) === norm(base) ? 0 : l.providesIncludes[0] === header ? 1 : l.providesIncludes.includes(header) ? 2 : -1;
+    const candidates = index.filter((l) => score(l) >= 0);
+    candidates.sort(
+        (a, b) =>
+            score(a) - score(b) ||
+            Number(b.name === base) - Number(a.name === base) ||
+            a.name.length - b.name.length ||
+            (a.name < b.name ? -1 : 1),
+    );
+    return candidates[0] ?? null;
+}
 
 // #region Archive
 export function parseProperties(text: string): Record<string, string> {

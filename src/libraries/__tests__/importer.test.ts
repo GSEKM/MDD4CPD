@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { strToU8, unzipSync, zipSync } from "fflate";
-import { compareVersions, importLibrary, latestVersions, libraryFiles, searchIndex } from "../importer";
+import { compareVersions, findLibraryForHeader, importLibrary, latestVersions, libraryFiles, searchIndex } from "../importer";
 import { generateCode } from "../../generator/generate";
 import { link, makeNode } from "../../components/examples";
 import { createHandles } from "../../components/nodes/handles";
@@ -63,6 +63,26 @@ describe("library index", () => {
             "Adafruit PWM Servo Driver Library",
             "Motor",
         ]);
+    });
+});
+
+describe("header resolution", () => {
+    const index = latestVersions([
+        { name: "Servo", version: "1.3.0", url: "", providesIncludes: ["Servo.h"] },
+        { name: "MultiLcd", version: "1.0", url: "", providesIncludes: ["multilcd.h", "LiquidCrystal.h"] },
+        { name: "LiquidCrystal", version: "1.0.7", url: "" },
+        { name: "ServoESP32", version: "1.0", url: "", providesIncludes: ["Servo.h"] },
+        { name: "DHT sensor library", version: "1.4.7", url: "" },
+        { name: "Adafruit BMP085 Library", version: "1.2.4", url: "" },
+    ]);
+    it("prefers providesIncludes, then the exact and shortest name", () => {
+        expect(findLibraryForHeader(index, "Servo.h")!.name).toBe("Servo");
+    });
+    it("falls back to a library named like the header", () => {
+        expect(findLibraryForHeader(index, "Adafruit_BMP085.h")!.name).toBe("Adafruit BMP085 Library");
+        expect(findLibraryForHeader(index, "DHT.h")).toBeNull();
+        // a library named like the header beats one that merely lists it
+        expect(findLibraryForHeader(index, "LiquidCrystal.h")!.name).toBe("LiquidCrystal");
     });
 });
 

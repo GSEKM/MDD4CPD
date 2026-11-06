@@ -107,6 +107,17 @@ void loop() {
         expect(out.code).toContain("Servo arm;\nStepper motor(200, 8, 9);");
         expect(out.code).toContain("    arm.attach(9);\n    motor.setSpeed(60);");
         expect(imp.diagram.nodes.some((n) => n.data.name === "Port" && n.data.extras.value === "9")).toBe(true);
+        // pins of the stepper are Ports; the step count is a Parameter(s)
+        const values = imp.diagram.nodes.filter((n) => ["Port", "Parameter(s)"].includes(n.data.name)).map((n) => `${n.data.name}=${n.data.extras.value}`);
+        expect(values).toEqual(["Parameter(s)=200", "Port=8", "Port=9", "Parameter(s)=60", "Parameter(s)=90", "Parameter(s)=100"]);
+    });
+
+    it("groups consecutive literals into one Parameter(s) block", () => {
+        const { imp, out } = roundTrip(`void setup() { Serial.begin(9600); }
+void loop() { Serial.print(3.14159, 2); }`);
+        expect(out.code).toContain("Serial.print(3.14159, 2);");
+        const params = imp.diagram.nodes.filter((n) => n.data.name === "Parameter(s)").map((n) => n.data.extras.value);
+        expect(params).toEqual(["9600", "3.14159", "2"]); // float then int: different types, not merged
     });
 
     it("reports what it cannot express, with line numbers", () => {
@@ -131,9 +142,20 @@ void loop() {}`;
             [5, "`for`"],
             [8, "`total++;`"],
             [9, "Unsupported"],
-            [10, "Argument"],
             [11, "Unknown"],
         ]);
+    });
+
+    it("keeps commas inside strings and nested calls", () => {
+        const { imp, out } = roundTrip(`void setup() {
+  Serial.println("hello, world!");
+  analogWrite(9, map(analogRead(A0), 0, 1023, 0, 255));
+}
+void loop() {}`);
+        expect(imp.notes.filter((n) => n.severity === "warning")).toEqual([]);
+        expect(out.problems).toEqual([]);
+        expect(out.code).toContain('    Serial.println("hello, world!");');
+        expect(out.code).toContain("    analogWrite(9, map(analogRead(A0), 0, 1023, 0, 255));");
     });
 
     it("is deterministic", () => {
