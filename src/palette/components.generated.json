@@ -1,0 +1,156 @@
+[
+    {
+        "name": "Servo",
+        "color": "orange",
+        "extras": {
+            "type": "component",
+            "library": "Servo.h",
+            "className": "Servo",
+            "packageName": "Servo",
+            "version": "1.3.0",
+            "checksum": "SHA-256:d25b0d77f10a810d24876c570410f32cc3129f9cc3d0370c861a278b969b4b38",
+            "link": "https://www.arduino.cc/reference/en/libraries/servo/",
+            "description": "Allows Arduino boards to control a variety of servo motors.",
+            "source": "arduino-library-index"
+        },
+        "methods": [
+            "Servo()",
+            "uint8_t attach(int pin)",
+            "uint8_t attach(int pin, int min, int max)",
+            "void detach()",
+            "void write(int value)",
+            "void writeMicroseconds(int value)",
+            "int read()",
+            "int readMicroseconds()",
+            "bool attached()",
+            "bool attach(uint8 pin, uint16 minPulseWidth=MIN_PULSE_WIDTH, uint16 maxPulseWidth=MAX_PULSE_WIDTH, int16 minAngle=MIN_ANGLE, int16 maxAngle=MAX_ANGLE)",
+            "bool detach()",
+            "void write(int angle)",
+            "void writeMicroseconds(uint16 pulseWidth)",
+            "uint16 readMicroseconds()",
+            "int attachedPin()",
+            "uint8_t attach(uint8_t pin, uint16_t min = MIN_ANGLE, uint16_t max = MAX_ANGLE)"
+        ]
+    },
+    {
+        "name": "Stepper",
+        "color": "orange",
+        "extras": {
+            "type": "component",
+            "library": "Stepper.h",
+            "className": "Stepper",
+            "packageName": "Stepper",
+            "version": "1.1.3",
+            "checksum": "SHA-256:85e91305a7c2a853ce9201d8261f150241be8c840d05a9adaff78412dcf66f7e",
+            "link": "https://www.arduino.cc/en/Reference/Stepper",
+            "description": "Allows Arduino boards to control a variety of stepper motors.",
+            "source": "arduino-library-index"
+        },
+        "methods": [
+            "Stepper(int number_of_steps, int motor_pin_1, int motor_pin_2)",
+            "Stepper(int number_of_steps, int motor_pin_1, int motor_pin_2, int motor_pin_3, int motor_pin_4)",
+            "Stepper(int number_of_steps, int motor_pin_1, int motor_pin_2, int motor_pin_3, int motor_pin_4, int motor_pin_5)",
+            "void setSpeed(long whatSpeed)",
+            "void step(int number_of_steps)",
+            "int version()"
+        ]
+    },
+    {
+        "name": "Adafruit_BMP085",
+        "color": "orange",
+        "extras": {
+            "type": "component",
+            "library": "Adafruit_BMP085.h",
+            "className": "Adafruit_BMP085",
+            "packageName": "Adafruit BMP085 Library",
+            "version": "1.2.4",
+            "checksum": "SHA-256:2622bec3a1b034366e6fcf8dcc4226749df93248dae3286390a3f1529ad459a9",
+            "link": "https://github.com/adafruit/Adafruit-BMP085-Library",
+            "description": "A powerful but easy to use BMP085/BMP180 Library",
+            "source": "arduino-library-index"
+        },
+        "methods": [
+            "Adafruit_BMP085()",
+            "bool begin(uint8_t mode = BMP085_ULTRAHIGHRES, TwoWire *wire = &Wire)",
+            "float readTemperature()",
+            "int32_t readPressure()",
+            "int32_t readSealevelPressure(float altitude_meters = 0)",
+            "float readAltitude(float sealevelPressure = 101325)",
+            "uint16_t readRawTemperature()",
+            "uint32_t readRawPressure()"
+        ]
+    },
+    {
+        "name": "Adafruit_PWMServoDriver",
+        "color": "orange",
+        "extras": {
+            "type": "component",
+            "library": "Adafruit_PWMServoDriver.h",
+            "className": "Adafruit_PWMServoDriver",
+            "packageName": "Adafruit PWM Servo Driver Library",
+            "version": "3.0.3",
+            "checksum": "SHA-256:320902ab529a1cfcf4df35212fa0c30293956a6a456b198820df58de3504dbc6",
+            "link": "https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library",
+            "description": "Adafruit PWM Servo Driver Library",
+            "source": "arduino-library-index"
+        },
+        "methods": [
+            "Adafruit_PWMServoDriver()",
+            "Adafruit_PWMServoDriver(const uint8_t addr)",
+            "Adafruit_PWMServoDriver(const uint8_t addr, TwoWire &i2c)",
+            "bool begin(uint8_t prescale = 0)",
+            "void reset()",
+            "void sleep()",
+            "void wakeup()",
+            "void setExtClk(uint8_t prescale)",
+            "void setPWMFreq(float freq)",
+            "void setOutputMode(bool totempole)",
+            "uint16_t getPWM(uint8_t num, bool off = false)",
+            "uint8_t setPWM(uint8_t num, uint16_t on, uint16_t off)",
+            "void setPin(uint8_t num, uint16_t val, bool invert = false)",
+            "uint8_t readPrescale()",
+            "void writeMicroseconds(uint8_t num, uint16_t Microseconds)",
+            "void setOscillatorFrequency(uint32_t freq)",
+            "uint32_t getOscillatorFrequency()"
+        ]
+    },
+    {
+        "name": "SoftwareWire",
+        "color": "orange",
+        "extras": {
+            "type": "component",
+            "library": "SoftwareWire.h",
+            "className": "SoftwareWire",
+            "packageName": "SoftwareWire",
+            "version": "1.6.0",
+            "checksum": "SHA-256:2732a727f520b66085b83be38afdb3ab7da72285bf928ac7cccb63b909ef2260",
+            "link": "https://github.com/Testato/SoftwareWire",
+            "description": "Creates a software I2C/TWI bus on every pins.",
+            "source": "arduino-library-index"
+        },
+        "methods": [
+            "SoftwareWire()",
+            "SoftwareWire(uint8_t sdaPin, uint8_t sclPin, boolean pullups = true, boolean detectClockStretch = true)",
+            "void end()",
+            "void begin()",
+            "void)begin(uint8_t addr)",
+            "void)begin(int addr)",
+            "void setClock(uint32_t clock)",
+            "void beginTransmission(uint8_t address)",
+            "void beginTransmission(int address)",
+            "uint8_t endTransmission(boolean sendStop = true)",
+            "uint8_t requestFrom(uint8_t address, uint8_t size, boolean sendStop = true)",
+            "uint8_t requestFrom(int address, int size, boolean sendStop = true)",
+            "size_t write(uint8_t data)",
+            "size_t write(const uint8_t *data, size_t quantity)",
+            "int available()",
+            "int read()",
+            "int readBytes(uint8_t *buf, uint8_t size)",
+            "int readBytes(char *buf, uint8_t size)",
+            "int readBytes(char *buf, int size)",
+            "int peek()",
+            "void setTimeout(long timeout)",
+            "void printStatus(Print &Ser)"
+        ]
+    }
+]

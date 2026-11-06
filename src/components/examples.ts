@@ -1,6 +1,6 @@
 // Example diagrams, built from the palette definitions in nodes.json.
 import type { Edge, Node } from "@xyflow/svelte";
-import palette from "../nodes.json";
+import { builtInPalette as palette } from "../palette";
 import { createHandles, withUsage } from "./nodes/handles";
 
 export type Diagram = { nodes: Node[]; edges: Edge[] };

@@ -72,7 +72,7 @@ describe("components", () => {
         const stepper = makeNode("Stepper", 400, 0);
         const edges: any[] = [];
         link(edges, uno, "setup()", steps, "in");
-        link(edges, steps, "out", stepper, "Stepper(int, int, int)");
+        link(edges, steps, "out", stepper, "Stepper(int number_of_steps, int motor_pin_1, int motor_pin_2)");
         const { code, problems } = generateCode({ nodes: [uno, steps, stepper], edges });
         expect(problems).toEqual([]);
         expect(code).toContain("Stepper stepper0(200, 8, 9);");

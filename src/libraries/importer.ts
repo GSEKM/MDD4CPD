@@ -56,6 +56,22 @@ export function compareVersions(a: string, b: string): number {
     return 0;
 }
 
+/** The fields we use from a raw index entry. */
+export function toEntry(l: any): LibraryEntry {
+    return {
+        name: l.name,
+        version: l.version,
+        author: l.author ?? "",
+        sentence: l.sentence ?? "",
+        category: l.category ?? "",
+        website: l.website ?? "",
+        url: l.url,
+        checksum: l.checksum ?? "",
+        size: l.size ?? 0,
+        architectures: l.architectures ?? [],
+    };
+}
+
 /** Keeps the latest version of each library, sorted by name. */
 export function latestVersions(raw: any[]): LibraryEntry[] {
     const latest = new Map<string, any>();
@@ -63,33 +79,22 @@ export function latestVersions(raw: any[]): LibraryEntry[] {
         const prev = latest.get(l.name);
         if (!prev || compareVersions(l.version, prev.version) > 0) latest.set(l.name, l);
     }
-    return [...latest.values()]
-        .map((l) => ({
-            name: l.name,
-            version: l.version,
-            author: l.author ?? "",
-            sentence: l.sentence ?? "",
-            category: l.category ?? "",
-            website: l.website ?? "",
-            url: l.url,
-            checksum: l.checksum ?? "",
-            size: l.size ?? 0,
-            architectures: l.architectures ?? [],
-        }))
-        .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    return [...latest.values()].map(toEntry).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
+/** Downloads the raw index (every version of every library). */
+export async function loadRawIndex(fetchImpl: typeof fetch = fetch): Promise<any[]> {
+    const res = await fetchImpl(INDEX_URL);
+    if (!res.ok || !res.body) throw new Error(`Library index: HTTP ${res.status}`);
+    const stream = res.body.pipeThrough(new DecompressionStream("gzip"));
+    return (await new Response(stream).json()).libraries;
 }
 
 let indexPromise: Promise<LibraryEntry[]> | null = null;
 
 /** Downloads (once per session) and decompresses the library index. */
 export function loadIndex(fetchImpl: typeof fetch = fetch): Promise<LibraryEntry[]> {
-    indexPromise ??= (async () => {
-        const res = await fetchImpl(INDEX_URL);
-        if (!res.ok || !res.body) throw new Error(`Library index: HTTP ${res.status}`);
-        const stream = res.body.pipeThrough(new DecompressionStream("gzip"));
-        const json = await new Response(stream).json();
-        return latestVersions(json.libraries);
-    })();
+    indexPromise ??= loadRawIndex(fetchImpl).then(latestVersions);
     indexPromise.catch(() => (indexPromise = null));
     return indexPromise;
 }

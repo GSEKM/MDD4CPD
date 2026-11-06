@@ -1,6 +1,6 @@
 // Libraries imported from the Arduino Library Manager, kept in browser storage.
 import { derived, writable } from "svelte/store";
-import builtIn from "../nodes.json";
+import { builtInPalette } from "../palette";
 import type { ImportedLibrary } from "./importer";
 
 const KEY = "mdd4cpd:libraries";
@@ -36,6 +36,6 @@ export const paletteKey = (n: any) => `${n.name}|${n.extras?.packageName ?? ""}`
 
 /** Built-in blocks followed by the blocks of every imported library. */
 export const palette = derived(importedLibraries, (libs) => [
-    ...(builtIn as any[]),
+    ...builtInPalette,
     ...libs.flatMap((l) => l.components),
 ]);

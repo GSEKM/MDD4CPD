@@ -25,7 +25,7 @@ Analog ports 0/6
 Digital ports 1/14 (9) */
 
 // Libraries
-#include <Servo.h>
+#include <Servo.h> // Servo 1.3.0
 
 // Objects
 Servo servo0;
