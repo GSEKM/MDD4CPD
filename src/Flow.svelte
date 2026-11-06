@@ -13,7 +13,8 @@
     import { onMount, tick } from "svelte";
     //@ts-ignore
     import Sidebar from "./components/sidebar/Sidebar.svelte";
-    import paletteNodes from "./nodes.json";
+    import { palette } from "./libraries/store";
+    import CommandPalette from "./components/CommandPalette.svelte";
     //@ts-ignore
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import Toolbar from "./components/Toolbar.svelte";
@@ -33,29 +34,46 @@
         if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
     };
 
-    const onDrop = (event: DragEvent) => {
-        if (!event.dataTransfer) return;
-        const data = event.dataTransfer.getData("application/svelteflow");
-        if (!data) return; // not dragged from the palette
-        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    let canvasEl: HTMLDivElement;
 
-        const nodeData = JSON.parse(data);
+    /** Adds a palette block at a screen position (default: canvas centre). */
+    function addBlock(def: any, screen?: { x: number; y: number }) {
+        const nodeData = JSON.parse(JSON.stringify(def));
         // Defaults of the original tool (MyEditableNodeModel)
         if (nodeData.extras && nodeData.extras.type !== "controller") {
             nodeData.extras.returnType = nodeData.extras.returnType || "byte";
             if (nodeData.extras.hasValue && nodeData.extras.value === undefined)
                 nodeData.extras.value = "";
         }
-
+        if (!screen) {
+            const r = canvasEl.getBoundingClientRect();
+            screen = { x: r.left + r.width / 2, y: r.top + r.height / 3 };
+        }
         const newNode: Node = {
             id: `${Math.random()}`,
             type: "custom",
-            position,
+            position: screenToFlowPosition(screen),
             origin: [0.5, 0.0],
             data: nodeData,
         };
-        nodes.update((n) => [...n, newNode]);
+        nodes.update((n) => [...n.map((x) => ({ ...x, selected: false })), { ...newNode, selected: true }]);
+    }
+
+    const onDrop = (event: DragEvent) => {
+        if (!event.dataTransfer) return;
+        const data = event.dataTransfer.getData("application/svelteflow");
+        if (!data) return; // not dragged from the palette
+        addBlock(JSON.parse(data), { x: event.clientX, y: event.clientY });
     };
+
+    // Command palette (Ctrl+K / Cmd+K)
+    let paletteMode: "all" | "libraries" | null = null;
+    function onKeydown(e: KeyboardEvent) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+            e.preventDefault();
+            paletteMode = paletteMode ? null : "all";
+        }
+    }
     // #endregion
 
     // Code is regenerated on every diagram change, as in the original tool.
@@ -186,6 +204,8 @@
     const minimapColor = (n: any) => categoryOf(n.data?.extras?.type).color;
 </script>
 
+<svelte:window on:keydown={onKeydown} />
+
 <div class="app" class:resizing>
     <Toolbar
         nodeCount={$nodes.length}
@@ -196,10 +216,11 @@
         on:open={(e) => open(e.detail)}
         on:save={save}
         on:clear={clear}
+        on:command={() => (paletteMode = "all")}
     />
     <div class="workspace">
-        <Sidebar nodes={paletteNodes} />
-        <div class="canvas">
+        <Sidebar nodes={$palette} on:libraries={() => (paletteMode = "libraries")} />
+        <div class="canvas" bind:this={canvasEl}>
             <SvelteFlow
                 {nodes}
                 {edges}
@@ -258,6 +279,14 @@
         </div>
     </div>
 </div>
+
+{#if paletteMode}
+    <CommandPalette
+        initialMode={paletteMode}
+        on:add={(e) => addBlock(e.detail)}
+        on:close={() => (paletteMode = null)}
+    />
+{/if}
 
 <style>
     .app {

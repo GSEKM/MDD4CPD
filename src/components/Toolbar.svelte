@@ -12,6 +12,7 @@
     open: File;
     save: void;
     clear: void;
+    command: void;
   }>();
 
   let menuOpen = false;
@@ -48,6 +49,13 @@
   </div>
 
   <div class="actions">
+    <button class="ui-btn cmd" on:click={() => dispatch("command")} title="Add a block or an Arduino library (Ctrl+K)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        ><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg
+      >
+      Add block or library
+      <kbd>Ctrl K</kbd>
+    </button>
     <div class="menu" use:clickOutside>
       <button class="ui-btn" on:click={() => (menuOpen = !menuOpen)} aria-expanded={menuOpen}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -173,6 +181,19 @@
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+  .cmd {
+    min-width: 230px;
+    justify-content: flex-start;
+  }
+  .cmd kbd {
+    margin-left: auto;
+    padding: 0 5px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: var(--font);
+    font-size: 10px;
+    color: var(--text-3);
   }
   .sep {
     width: 1px;
