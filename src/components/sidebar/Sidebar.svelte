@@ -36,7 +36,8 @@
     if (t === "controller")
       return `${node.extras.digitalPorts} digital · ${node.extras.analogPorts} analog`;
     if (t === "component") return node.extras.library || "component";
-    if (node.methods?.length) return `${node.methods.length} functions`;
+    const n = node.methods?.length || 0;
+    if (t === "built-in" && n) return `${n} function${n > 1 ? "s" : ""}`;
     return "";
   }
 
