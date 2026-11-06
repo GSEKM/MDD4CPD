@@ -4,7 +4,7 @@
   import "prismjs/components/prism-cpp";
   import "prismjs/components/prism-arduino";
   import { createEventDispatcher } from "svelte";
-  import type { Problem } from "../code/code";
+  import type { Problem, Severity } from "../../generator/problems";
 
   export let code: string = "";
   export let problems: Problem[] = [];
@@ -19,12 +19,22 @@
     (acc, p) => {
       const found = acc.find((u) => u.message === p.message);
       if (found) {
-        if (p.node) found.nodes.push(p.node);
-      } else acc.push({ message: p.message, nodes: p.node ? [p.node] : [] });
+        if (p.nodeId) found.nodes.push({ id: p.nodeId, name: p.nodeName });
+      } else
+        acc.push({
+          message: p.message,
+          severity: p.severity,
+          nodes: p.nodeId ? [{ id: p.nodeId, name: p.nodeName }] : [],
+        });
       return acc;
     },
-    [] as { message: string; nodes: any[] }[],
+    [] as { message: string; severity: Severity; nodes: { id: string; name?: string }[] }[],
   );
+  // Errors first; otherwise keep the generator's (deterministic) order.
+  $: sortedProblems = [...uniqueProblems].sort(
+    (a, b) => Number(b.severity === "error") - Number(a.severity === "error"),
+  );
+  $: errorCount = problems.filter((p) => p.severity === "error").length;
 
   $: html = Prism.highlight(code, Prism.languages.arduino, "arduino");
   $: lineCount = code ? code.replace(/\n$/, "").split("\n").length : 0;
@@ -106,18 +116,21 @@
     {/if}
   {:else}
     <div class="problems">
-      {#each uniqueProblems as problem}
-        <div class="problem">
+      {#each sortedProblems as problem}
+        <div class="problem" class:error={problem.severity === "error"}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             ><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4M12 17h.01" /></svg
           >
           <div class="body">
-            <div class="msg">{problem.message}</div>
+            <div class="msg">
+              <span class="sev">{problem.severity}</span>
+              {problem.message}
+            </div>
             {#if problem.nodes.length > 0}
               <div class="refs">
                 {#each problem.nodes as node}
                   <button on:click={() => dispatch("focus", node.id)} title="Show on canvas"
-                    >{node.data?.name ?? "block"}</button
+                    >{node.name ?? "block"}</button
                   >
                 {/each}
               </div>
@@ -137,7 +150,13 @@
 
   {#if tab === "code" && problems.length > 0}
     <button class="status warn" on:click={() => (tab = "problems")}>
-      {problems.length} problem{problems.length > 1 ? "s" : ""} in the model — the code may be incomplete
+      {#if errorCount > 0}
+        {errorCount} error{errorCount > 1 ? "s" : ""}{problems.length > errorCount
+          ? ` and ${problems.length - errorCount} warning${problems.length - errorCount > 1 ? "s" : ""}`
+          : ""} in the model — the code is incomplete
+      {:else}
+        {problems.length} warning{problems.length > 1 ? "s" : ""} in the model
+      {/if}
     </button>
   {/if}
 </section>
@@ -289,6 +308,25 @@
   .msg {
     color: var(--text);
     line-height: 1.45;
+  }
+  .sev {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 5px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+  .problem.error .sev {
+    background: #ff6b6b22;
+    color: var(--error);
+  }
+  .problem.error > svg {
+    color: var(--error);
   }
   .refs {
     display: flex;

@@ -18,6 +18,7 @@
   --warn: #f5b84a;
   --warn-soft: #f5b84a1f;
   --ok: #4cc38a;
+  --error: #ff6b6b;
 
   /* Node categories (keyed by extras.type, see components/categories.ts) */
   --cat-controller: #4cc38a;

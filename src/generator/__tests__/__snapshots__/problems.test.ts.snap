@@ -8,7 +8,7 @@ exports[`model problems > reports controllers, port range, arity, types and unus
   "This component has no links",
   "This component has no links",
   "The function call \\"void pinMode(int pin, int mode)\\" is receiving 1 parameters instead of the expected 2",
-  "The function call \\"void delay(int ms)\\" expects its first parameter to be of type \\"int\\", received \\"byte\\" instead",
+  "The function call \\"void delay(int ms)\\" expects its first parameter to be of type \\"int\\", received \\"String\\" instead (incompatible types)",
 ]
 `;
 
@@ -28,7 +28,7 @@ void setup() {
 }
 
 void loop() {
-    delay(1000);
+    delay(\\"1s\\");
 }
 "
 `;

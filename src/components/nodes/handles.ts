@@ -1,3 +1,4 @@
+import { parseSignature } from "../../generator/signature";
 // Plain strings (equal to Svelte Flow's Position values) so that this module,
 // the examples and the generator can run outside the browser (tests, CLI).
 type Side = "left" | "right";
@@ -60,7 +61,11 @@ export function withUsage(name: string, handles: HandleInfo[]): HandleInfo[] {
 
 /** Splits "unsigned long millis(int a)" into its parts for display. */
 export function splitSignature(sig: string): { ret: string; name: string; args: string } | null {
-    const m = sig.match(/^\s*(.*?)\s*([A-Za-z_]\w*)\s*\((.*)\)\s*$/);
-    if (!m) return null;
-    return { ret: m[1], name: m[2], args: m[3] };
+    const s = parseSignature(sig);
+    if (!s) return null;
+    return {
+        ret: (s.isStatic ? "static " : "") + s.returnType,
+        name: s.name,
+        args: s.params.map((p) => p.raw).join(", "),
+    };
 }

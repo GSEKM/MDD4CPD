@@ -1,7 +1,7 @@
 // store.ts
 import { derived, writable } from 'svelte/store';
 import type { Edge, Node } from '@xyflow/svelte';
-import type { Problem } from './code';
+import type { Problem } from '../../generator/problems';
 
 export const edges = writable<Edge[]>([]);
 export const nodes = writable<Node[]>([]);
@@ -13,7 +13,7 @@ export const problems = writable<Problem[]>([]);
 export const problemsByNode = derived(problems, ($problems) => {
     const map = new Map<string, Problem[]>();
     $problems.forEach((p) => {
-        const id = p.node?.id;
+        const id = p.nodeId;
         if (!id) return;
         if (!map.has(id)) map.set(id, []);
         map.get(id)!.push(p);

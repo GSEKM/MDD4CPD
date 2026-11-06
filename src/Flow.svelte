@@ -18,7 +18,7 @@
     import CustomNode from "./components/nodes/CustomNode.svelte";
     import Toolbar from "./components/Toolbar.svelte";
     import { edges, nodes, problems } from "./components/code/store";
-    import { generateCode } from "./components/code/code";
+    import { generateCode } from "./generator/generate";
     import { examples, type Diagram } from "./components/examples";
     import { categoryOf } from "./components/categories";
     import CodeViewer from "./components/codeViewer/codeViewer.svelte";

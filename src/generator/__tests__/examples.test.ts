@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateCode } from "../../components/code/code";
+import { generateCode } from "../generate";
 import { examples } from "../../components/examples";
 
 describe("examples", () => {
