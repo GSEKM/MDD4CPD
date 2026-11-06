@@ -6,16 +6,25 @@
     useSvelteFlow,
     useUpdateNodeInternals,
   } from "@xyflow/svelte";
-  import { edges } from "../code/store";
+  import { edges, problemsByNode } from "../code/store";
+  import { categoryOf } from "../categories";
+  import {
+    addHandle,
+    createHandles,
+    splitSignature,
+    withUsage,
+    type HandleInfo,
+  } from "./handles";
 
   type $$Props = NodeProps;
   export let id: $$Props["id"];
   export let data: $$Props["data"];
+  export let selected: boolean = false;
   // Svelte Flow passes more props than we use; referencing $$restProps
   // silences the dev-mode "unknown prop" warnings.
   $$restProps;
 
-  const { updateNodeData } = useSvelteFlow();
+  const { updateNodeData, deleteElements } = useSvelteFlow();
   const updateNodeInternals = useUpdateNodeInternals();
 
   // Same lists as the original tool (MyEditableNodeWidget)
@@ -36,58 +45,14 @@
   ];
   const portTypes = ["Digital", "Analog"];
   const operators = ["==", "!=", "<", ">", "<=", ">="];
-  const paramTypes = [
-    "variable",
-    "constant",
-    "parameter",
-    "port",
-    "built-in-constant",
-  ];
-
-  interface HandleInfo {
-    id: string;
-    edge: string;
-    index: number;
-    type: "source" | "target";
-    position: Position;
-    isConnectable: boolean;
-  }
-
-  function addHandle(
-    handles: HandleInfo[],
-    edge: string,
-    index: number,
-    type: "source" | "target",
-  ) {
-    handles.push({
-      id: `${type}-${index}`,
-      edge,
-      index,
-      type,
-      position: type === "source" ? Position.Right : Position.Left,
-      isConnectable: true,
-    });
-  }
-
-  function createHandles(d: any): HandleInfo[] {
-    const handles: HandleInfo[] = [];
-    let leftIndex = 0;
-    let rightIndex = 0;
-    d.outs?.forEach((e: string) => addHandle(handles, e, rightIndex++, "source"));
-    d.ins?.forEach((e: string) => addHandle(handles, e, leftIndex++, "target"));
-    d.methods?.forEach((e: string) => {
-      addHandle(handles, e, rightIndex++, "source");
-      addHandle(handles, e, leftIndex++, "target");
-    });
-    return handles;
-  }
 
   // Handles live in the node data so that the generator can read them.
   if (!data.handles) updateNodeData(id, { handles: createHandles(data) });
 
   $: extras = data.extras || {};
+  $: cat = categoryOf(extras.type);
   $: handles = (data.handles || []) as HandleInfo[];
-  $: isValueNode = paramTypes.includes(extras.type);
+  $: nodeProblems = $problemsByNode.get(id) || [];
 
   // One row per index: in-k on the left, out-k on the right.
   $: rows = Array.from(
@@ -103,36 +68,10 @@
     updateNodeData(id, { extras: { ...extras, [key]: value } });
   }
 
-  // #region Usages (extra in/out pairs), as in the original tool
-  $: firstUsage = data.name === "Function" ? 1 : 0;
-  $: usageBase = rows[firstUsage];
-
-  function nextIndex() {
-    return Math.max(-1, ...handles.map((h) => h.index)) + 1;
-  }
-
   function setHandles(next: HandleInfo[]) {
     updateNodeData(id, { handles: next });
     // Svelte Flow must re-measure the handles after they change.
     setTimeout(() => updateNodeInternals(id), 0);
-  }
-
-  function addPair(leftName?: string, rightName?: string) {
-    const next = [...handles];
-    const index = nextIndex();
-    if (rightName) addHandle(next, rightName, index, "source");
-    if (leftName) addHandle(next, leftName, index, "target");
-    setHandles(next);
-  }
-
-  function addUsage() {
-    const count = handles.filter(
-      (h) => h.type === "target" && h.edge.startsWith(usageBase?.left?.edge),
-    ).length;
-    addPair(
-      usageBase?.left && `${usageBase.left.edge}-${count}`,
-      usageBase?.right && `${usageBase.right.edge}-${count}`,
-    );
   }
 
   function isConnected(h: HandleInfo | undefined) {
@@ -156,199 +95,395 @@
   }
 
   const setter = "void setValue(<T> value)";
-  // #endregion
+  function addSetter() {
+    const next = [...handles];
+    const index = Math.max(-1, ...handles.map((h) => h.index)) + 1;
+    addHandle(next, setter, index, "source");
+    addHandle(next, setter, index, "target");
+    setHandles(next);
+  }
+
+  $: firstUsage = data.name === "Function" ? 1 : 0;
+  $: usagePrefix = rows[firstUsage]?.left?.edge ?? "";
+  $: usageCount = rows.filter(
+    (r, i) => i > firstUsage && r.left?.edge.startsWith(usagePrefix + "-"),
+  ).length;
+  $: hasEditors =
+    extras.hasReturnType || extras.hasPortType || extras.hasUsername || extras.hasValue;
+  $: valueLabel =
+    data.name === "Function" ? "name" : extras.type === "logic" ? "operator" : "value";
+
+  /** Usage handles are named "in-1"/"out-1"; show them as "in 2"/"out 2". */
+  function pretty(label: string | undefined) {
+    if (!label) return "";
+    const m = label.match(/^(.*)-(\d+)$/);
+    return m ? `${m[1]} ${Number(m[2]) + 1}` : label;
+  }
 </script>
 
-<div class="custom" style={`border-color: ${data.color};`}>
-  <div class="label">{data.name}</div>
+<div
+  class="node"
+  class:selected
+  class:has-problems={nodeProblems.length > 0}
+  style="--cat: {cat.color}"
+>
+  <header>
+    <span class="cat">{cat.label.replace(/s$/, "")}</span>
+    <span class="title">{data.name}</span>
+    {#if nodeProblems.length > 0}
+      <span class="badge" title={nodeProblems.map((p) => p.message).join("\n")}
+        >{nodeProblems.length}</span
+      >
+    {/if}
+    <button
+      class="delete nodrag"
+      title="Delete block"
+      on:click={() => deleteElements({ nodes: [{ id }] })}>×</button
+    >
+  </header>
 
-  <div class="editors nodrag">
-    {#if extras.hasReturnType}
-      <label>
-        type
-        <select
-          value={extras.returnType}
-          on:change={(e) => setExtra("returnType", e.currentTarget.value)}
-        >
-          {#each returnTypes as t}<option value={t}>{t}</option>{/each}
-        </select>
-      </label>
-    {/if}
-    {#if extras.hasPortType}
-      <label>
-        port
-        <select
-          value={extras.portType}
-          on:change={(e) => setExtra("portType", e.currentTarget.value)}
-        >
-          {#each portTypes as t}<option value={t}>{t}</option>{/each}
-        </select>
-      </label>
-    {/if}
-    {#if extras.hasUsername}
-      <label>
-        name
-        <input
-          value={extras.name ?? ""}
-          on:input={(e) => setExtra("name", e.currentTarget.value)}
-        />
-      </label>
-    {/if}
-    {#if extras.hasValue}
-      <label>
-        {data.name === "Function"
-          ? "name"
-          : extras.type === "logic"
-            ? "operator"
-            : "value"}
-        {#if extras.selectableOptions || extras.returnType === "bool"}
+  {#if hasEditors}
+    <div class="editors nodrag">
+      {#if extras.hasReturnType}
+        <label>
+          <span>type</span>
           <select
-            value={extras.value}
-            on:change={(e) => setExtra("value", e.currentTarget.value)}
+            class="ui-select"
+            value={extras.returnType}
+            on:change={(e) => setExtra("returnType", e.currentTarget.value)}
           >
-            {#each extras.returnType === "bool" ? ["true", "false"] : extras.selectableOptions as o}
-              <option value={o}>{o}</option>
-            {/each}
+            {#each returnTypes as t}<option value={t}>{t}</option>{/each}
           </select>
-        {:else if extras.type === "logic" && data.name !== "Function"}
+        </label>
+      {/if}
+      {#if extras.hasPortType}
+        <label>
+          <span>port</span>
           <select
-            value={extras.value}
-            on:change={(e) => setExtra("value", e.currentTarget.value)}
+            class="ui-select"
+            value={extras.portType}
+            on:change={(e) => setExtra("portType", e.currentTarget.value)}
           >
-            {#each operators as o}<option value={o}>{o}</option>{/each}
+            {#each portTypes as t}<option value={t}>{t}</option>{/each}
           </select>
-        {:else}
+        </label>
+      {/if}
+      {#if extras.hasUsername}
+        <label>
+          <span>name</span>
           <input
-            value={extras.value ?? ""}
-            placeholder={isValueNode ? "1,2,3 for arrays" : ""}
-            on:input={(e) => setExtra("value", e.currentTarget.value)}
+            class="ui-input"
+            value={extras.name ?? ""}
+            on:input={(e) => setExtra("name", e.currentTarget.value)}
           />
-        {/if}
-      </label>
-    {/if}
-    {#if extras.hasUsages}
-      <div class="usages">
-        usages
-        <button on:click={addUsage} title="Add usage">+</button>
-        <button
-          on:click={() => removeLast(usageBase?.left?.edge ?? "", firstUsage)}
-          title="Remove last unconnected usage">-</button
-        >
-      </div>
-    {/if}
-    {#if extras.type === "variable"}
-      <div class="usages">
-        setters
-        <button on:click={() => addPair(setter, setter)} title="Add setter"
-          >+</button
-        >
-        <button on:click={() => removeLast("void setValue", 0)} title="Remove last unconnected setter"
-          >-</button
-        >
-      </div>
-    {/if}
-  </div>
-
-  {#each rows as row}
-    <div class="row">
-      {#if row.left}
-        <Handle
-          type="target"
-          position={Position.Left}
-          id={row.left.id}
-          class="port"
-        />
+        </label>
       {/if}
-      <span class="in">{row.left?.edge ?? ""}</span>
-      {#if row.right && row.right.edge !== row.left?.edge}
-        <span class="out">{row.right.edge}</span>
-      {/if}
-      {#if row.right}
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={row.right.id}
-          class="port"
-        />
+      {#if extras.hasValue}
+        <label>
+          <span>{valueLabel}</span>
+          {#if extras.selectableOptions || extras.returnType === "bool"}
+            <select
+              class="ui-select"
+              value={extras.value}
+              on:change={(e) => setExtra("value", e.currentTarget.value)}
+            >
+              {#each extras.returnType === "bool" ? ["true", "false"] : extras.selectableOptions as o}
+                <option value={o}>{o}</option>
+              {/each}
+            </select>
+          {:else if extras.type === "logic" && data.name !== "Function"}
+            <select
+              class="ui-select"
+              value={extras.value}
+              on:change={(e) => setExtra("value", e.currentTarget.value)}
+            >
+              {#each operators as o}<option value={o}>{o}</option>{/each}
+            </select>
+          {:else}
+            <input
+              class="ui-input"
+              value={extras.value ?? ""}
+              placeholder={extras.type === "logic" ? "" : "e.g. 10 or 1,2,3"}
+              on:input={(e) => setExtra("value", e.currentTarget.value)}
+            />
+          {/if}
+        </label>
       {/if}
     </div>
-  {/each}
+  {/if}
+
+  <div class="rows">
+    {#each rows as row (row.left?.id ?? row.right?.id)}
+      {@const sig = splitSignature(row.left?.edge ?? row.right?.edge ?? "")}
+      {@const same = row.left && row.right && row.left.edge === row.right.edge}
+      <div class="row" class:method={same && sig}>
+        {#if row.left}
+          <Handle type="target" position={Position.Left} id={row.left.id} class="port" />
+        {/if}
+        {#if same && sig}
+          <span class="sig" title={row.left?.edge}>
+            <span class="fn">{sig.name}</span><span class="args">({sig.args})</span>
+          </span>
+          {#if sig.ret && sig.ret !== "void"}<span class="ret">{sig.ret}</span>{/if}
+        {:else if same}
+          <span class="in">{row.left?.edge.replace(/^void /, "")}</span>
+        {:else}
+          <span class="in">{pretty(row.left?.edge)}</span>
+          {#if row.right}<span class="out">{pretty(row.right.edge)}</span>{/if}
+        {/if}
+        {#if row.right}
+          <Handle type="source" position={Position.Right} id={row.right.id} class="port" />
+        {/if}
+      </div>
+    {/each}
+  </div>
+
+  {#if extras.hasUsages || extras.type === "variable"}
+    <footer class="nodrag">
+      {#if extras.hasUsages}
+        <div class="stepper" title="Usages: reuse this block in more statements">
+          <span>usages</span>
+          <button
+            on:click={() => removeLast(usagePrefix, firstUsage)}
+            disabled={usageCount === 0}
+            title="Remove the last unconnected usage">−</button
+          >
+          <b>{usageCount + 1}</b>
+          <button on:click={() => setHandles(withUsage(data.name, handles))} title="Add a usage"
+            >+</button
+          >
+        </div>
+      {/if}
+      {#if extras.type === "variable"}
+        <button class="link-btn" on:click={addSetter} title="Add a setter (assignment) handle"
+          >+ setter</button
+        >
+      {/if}
+    </footer>
+  {/if}
 </div>
 
 <style>
-  .custom {
-    background-color: #2d2d2d;
-    border-radius: 10px;
-    border-width: 1px;
-    border-style: solid;
-    color: #fff;
-    min-width: 80px;
-    padding-bottom: 4px;
+  .node {
+    min-width: 150px;
+    max-width: 320px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    box-shadow: 0 6px 18px #00000055;
+    font-size: 12px;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  .node.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 8px 24px #00000066;
+  }
+  .node.has-problems {
+    border-color: var(--warn);
   }
 
-  .label {
+  header {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-rows: auto auto;
+    column-gap: 6px;
+    align-items: center;
+    padding: 7px 8px 7px 12px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--cat) 16%, transparent), transparent 85%);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--cat);
+    border-radius: var(--radius) 0 0 0;
+  }
+  .cat {
+    grid-column: 1;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cat);
+  }
+  .title {
+    grid-column: 1;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--warn);
+    color: #1a1300;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+  }
+  .delete {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    color: var(--text-3);
     font-size: 15px;
-    font-weight: bold;
-    margin: 8px 10px 4px 10px;
-    text-align: center;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .node:hover .delete,
+  .node.selected .delete {
+    opacity: 1;
+  }
+  .delete:hover {
+    background: var(--raised);
+    color: var(--text);
   }
 
   .editors {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    margin: 0 10px 4px 10px;
-    font-size: 11px;
-    color: #bbb;
+    gap: 5px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
   }
-
-  .editors label,
-  .usages {
-    display: flex;
-    justify-content: space-between;
+  .editors label {
+    display: grid;
+    grid-template-columns: 52px 1fr;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
-
-  .editors input,
-  .editors select {
-    background: #1a1a1a;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 4px;
+  .editors label span {
+    color: var(--text-3);
     font-size: 11px;
-    padding: 1px 4px;
-    width: 90px;
+  }
+  .editors .ui-input,
+  .editors .ui-select {
+    width: 100%;
+    min-width: 0;
+    height: 24px;
+    padding: 1px 6px;
   }
 
-  .usages button {
-    background: #555;
-    color: #fff;
-    border-radius: 4px;
-    width: 18px;
-    line-height: 16px;
-    margin-left: 2px;
+  .rows {
+    padding: 3px 0;
   }
-
   .row {
     position: relative;
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 6px 12px;
-    border-top: 1px solid #00000040;
-    font-size: 13px;
+    align-items: center;
+    gap: 14px;
+    min-height: 26px;
+    padding: 3px 14px;
     white-space: nowrap;
   }
-
+  .row:hover {
+    background: #ffffff06;
+  }
+  .in {
+    color: var(--text-2);
+  }
   .out {
     margin-left: auto;
+    color: var(--text-2);
+  }
+  .sig {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fn {
+    color: var(--text);
+  }
+  .args {
+    color: var(--text-3);
+  }
+  .ret {
+    margin-left: auto;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: var(--raised);
+    color: var(--text-2);
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+
+  footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stepper span {
+    margin-right: 2px;
+  }
+  .stepper b {
+    color: var(--text);
+    min-width: 10px;
+    text-align: center;
+  }
+  .stepper button,
+  .link-btn {
+    height: 20px;
+    min-width: 20px;
+    padding: 0 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-2);
+    line-height: 1;
+  }
+  .stepper button:hover:not(:disabled),
+  .link-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .stepper button:disabled {
+    opacity: 0.35;
   }
 
   :global(.svelte-flow__handle.port) {
-    background-color: #fff;
-    border: 1px solid #000;
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
+    background: var(--panel-2);
+    border: 2px solid var(--cat, var(--text-2));
+    transition: transform 0.1s, background 0.1s;
+  }
+  :global(.svelte-flow__handle.port:hover),
+  :global(.svelte-flow__handle.port.connectingto) {
+    transform: translate(var(--tx, 0), -50%) scale(1.35);
+    background: var(--cat, var(--text));
+  }
+  :global(.svelte-flow__handle-left.port) {
+    --tx: -50%;
+  }
+  :global(.svelte-flow__handle-right.port) {
+    --tx: 50%;
   }
 </style>
