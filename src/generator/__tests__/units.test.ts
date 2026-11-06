@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arity, callName, parseParam, parseSignature } from "../signature";
+import { arity, callName, parseParam, parseSignature, splitValues } from "../signature";
 import { familyOf, incompatibility } from "../types";
 import { CodeWriter } from "../writer";
 import { generateCode } from "../generate";
@@ -30,6 +30,12 @@ describe("signature", () => {
         expect(st.name).toBe("begin");
         expect(parseParam("unsigned int").name).toBe("");
         expect(parseParam("char buf[]").type).toBe("char*");
+    });
+    it("splits block values at top-level commas only", () => {
+        expect(splitValues("1, 2,3")).toEqual(["1", "2", "3"]);
+        expect(splitValues('"a, b"')).toEqual(['"a, b"']);
+        expect(splitValues("map(x, 0, 9)")).toEqual(["map(x, 0, 9)"]);
+        expect(splitValues("',', 'x'")).toEqual(["','", "'x'"]);
     });
     it("is null for non-call labels", () => {
         expect(parseSignature("in")).toBeNull();

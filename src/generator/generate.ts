@@ -18,7 +18,7 @@
 
 import { Graph, extras, isValue, nameOf, typeOf, type DEdge, type DNode, type Diagram, type Port } from "./graph";
 import { Problems, type Problem } from "./problems";
-import { arity, callName, parseSignature, type Signature } from "./signature";
+import { arity, callName, parseSignature, splitValues, type Signature } from "./signature";
 import { incompatibility } from "./types";
 import { CodeWriter, type Entry } from "./writer";
 
@@ -289,7 +289,7 @@ class Generator {
 
     private valuesOf(n: DNode): string[] {
         if (typeOf(n) === "built-in-constant") return [nameOf(n)];
-        return String(extras(n).value ?? "").split(",").map((v) => v.trim());
+        return splitValues(String(extras(n).value ?? ""));
     }
 
     /** Arguments contributed by a value block, with their types. */

@@ -90,3 +90,33 @@ export function arity(sig: Signature): [number, number] {
     const required = sig.params.filter((p) => p.defaultValue === undefined).length;
     return [required, sig.params.length];
 }
+
+/**
+ * Splits a block value into its elements: "1, 2, 3" -> ["1", "2", "3"], while
+ * commas inside quotes or brackets are kept: "\"a, b\"" and "map(x, 0, 9)" are
+ * one element each.
+ */
+export function splitValues(text: string): string[] {
+    const parts: string[] = [];
+    let depth = 0;
+    let quote = "";
+    let current = "";
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (quote) {
+            current += ch;
+            if (ch === "\\") current += text[++i] ?? "";
+            else if (ch === quote) quote = "";
+            continue;
+        }
+        if (ch === '"' || ch === "'") quote = ch;
+        else if ("([{".includes(ch)) depth++;
+        else if (")]}".includes(ch)) depth = Math.max(0, depth - 1);
+        if (ch === "," && depth === 0) {
+            parts.push(current.trim());
+            current = "";
+        } else current += ch;
+    }
+    parts.push(current.trim());
+    return parts;
+}
