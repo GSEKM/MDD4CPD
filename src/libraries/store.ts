@@ -1,7 +1,7 @@
 // Libraries imported from the Arduino Library Manager, kept in browser storage.
 import { derived, writable } from "svelte/store";
 import { builtInPalette } from "../palette";
-import type { ImportedLibrary } from "./importer";
+import { findLibraryForHeader, importLibrary, loadIndex, type ImportedLibrary } from "./importer";
 
 const KEY = "mdd4cpd:libraries";
 
@@ -39,3 +39,37 @@ export const palette = derived(importedLibraries, (libs) => [
     ...builtInPalette,
     ...libs.flatMap((l) => l.components),
 ]);
+
+/**
+ * Imports, from the Arduino Library Manager, the library that provides each
+ * header. Returns the problems (empty when everything was imported).
+ */
+export async function importLibrariesFor(
+    headers: string[],
+    onStatus: (status: string) => void = () => {},
+): Promise<string[]> {
+    const failed: string[] = [];
+    try {
+        onStatus("Loading the Arduino library index…");
+        const index = await loadIndex();
+        for (const header of headers) {
+            const lib = findLibraryForHeader(index, header);
+            if (!lib) {
+                failed.push(`${header} (no library provides it)`);
+                continue;
+            }
+            onStatus(`Importing ${lib.name} ${lib.version} for ${header}…`);
+            try {
+                const imported = await importLibrary(lib);
+                if (!imported.components.some((c) => c.extras.library === header))
+                    failed.push(`${lib.name} ${lib.version} does not provide ${header}`);
+                addLibrary(imported);
+            } catch (e: any) {
+                failed.push(`${header}: ${e?.message || e}`);
+            }
+        }
+    } catch (e: any) {
+        failed.push(e?.message || String(e));
+    }
+    return failed;
+}

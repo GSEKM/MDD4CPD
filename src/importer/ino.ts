@@ -120,6 +120,39 @@ function splitTop(toks: Tok[], sep: string): Tok[][] {
     return parts.length === 1 && parts[0].length === 0 ? [] : parts;
 }
 
+/** Size of a block before the browser has measured it. */
+export function estimateSize(n: DNode): { width: number; height: number } {
+    const d = n.data;
+    const rows = Math.max(0, ...d.handles.map((h: HandleInfo) => h.index + 1));
+    const editors = ["hasReturnType", "hasPortType", "hasUsername", "hasValue"].filter((k) => d.extras[k]).length;
+    const longest = Math.max(8, ...d.handles.map((h: HandleInfo) => h.edge.length));
+    // calibrated against the rendered blocks (CustomNode)
+    return {
+        width: Math.min(320, Math.max(170, 60 + longest * 6.5, editors >= 2 ? 250 : 0)),
+        height: 52 + editors * 36 + Math.min(rows, 10) * 26 + (d.extras.hasUsages ? 32 : 0),
+    };
+}
+
+/** Brackets that are never closed, or closed without being opened. */
+function unbalanced(toks: Tok[]): { line: number; message: string }[] {
+    const pairs: Record<string, string> = { ")": "(", "]": "[", "}": "{" };
+    const stack: Tok[] = [];
+    const out: { line: number; message: string }[] = [];
+    for (const t of toks) {
+        if (t.t !== "op") continue;
+        if (t.v === "(" || t.v === "[" || t.v === "{") stack.push(t);
+        else if (pairs[t.v]) {
+            if (stack[stack.length - 1]?.v === pairs[t.v]) stack.pop();
+            else {
+                out.push({ line: t.line, message: `Unexpected \`${t.v}\`` });
+                return out;
+            }
+        }
+    }
+    stack.forEach((t) => out.push({ line: t.line, message: `\`${t.v}\` is never closed` }));
+    return out;
+}
+
 function indexTop(toks: Tok[], pred: (t: Tok) => boolean): number {
     let depth = 0;
     for (let i = 0; i < toks.length; i++) {
@@ -254,6 +287,7 @@ export function importSketch(source: string, palette: any[]): SketchImport {
     // #endregion
 
     const toks = tokenize(lines.join("\n"));
+    unbalanced(toks).forEach((n) => b.note(n.line, n.message));
 
     // #region Top level: declarations and function definitions
     type Fn = { name: string; ret: string; params: Tok[]; body: Tok[]; line: number };
@@ -690,19 +724,7 @@ export function importSketch(source: string, palette: any[]): SketchImport {
     // #endregion
 
     // #region Layout (estimated sizes; the editor re-runs it with real ones)
-    const estimate = (n: DNode) => {
-        const d = n.data;
-        const rows = Math.max(0, ...d.handles.map((h: HandleInfo) => h.index + 1));
-        const editors = ["hasReturnType", "hasPortType", "hasUsername", "hasValue"].filter((k) => d.extras[k]).length;
-        const longest = Math.max(8, ...d.handles.map((h: HandleInfo) => h.edge.length));
-        return {
-            id: n.id,
-            position: n.position!,
-            data: d,
-            width: Math.min(320, 60 + longest * 6.5),
-            height: 44 + editors * 29 + Math.min(rows, 10) * 26 + (d.extras.hasUsages ? 32 : 0),
-        };
-    };
+    const estimate = (n: DNode) => ({ id: n.id, position: n.position!, data: n.data, ...estimateSize(n) });
     const positions = tidyLayout(b.nodes.map(estimate), b.edges, []);
     b.nodes.forEach((n) => (n.position = positions.get(n.id) ?? { x: 0, y: 0 }));
     // #endregion

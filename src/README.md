@@ -12,6 +12,24 @@ Code is regenerated on every change of the diagram (right panel).
    operand into `set(T yValue)`; `body`/`else` lead to the inner statements.
 6. Functions are declared globally; link into `in` to call them and from `body` to fill them.
 
+#### Editing the code
+
+**Edit** (code panel) turns the sketch into an editor; the canvas follows the code.
+After a short pause (or `Ctrl+S`) the code is read by the `.ino` importer and merged
+into the diagram (`importer/sync.ts`):
+
+- blocks the code still describes keep their id and position, matched by palette
+  name and identity in the code (instance, variable, constant or function name,
+  value), then by kind; new blocks go next to the block they are linked to, below
+  any block they would cover;
+- if a part of the code has no block equivalent (`for`, unknown calls, unclosed
+  brackets, an `#include` no block provides ...) the canvas is left as it is and
+  the lines are listed, with **Import** for missing libraries and **Apply the rest**
+  to update the canvas without those parts;
+- edits on the canvas while editing replace the code if it was in sync;
+- **Revert** restores the diagram from before editing; **Done** shows the generated
+  code again (normalised: constants in upper case, header comment, sections).
+
 ### Architecture
 
 ```
@@ -32,6 +50,8 @@ diagram (nodes + links) <------------------ drag / Ctrl+K --------------------+
 - `importer/ino.ts` — deterministic .ino -> diagram conversion (the inverse of the
   generator; supported subset and ordering rules at the top of the file). Generated
   sketches round-trip exactly; unsupported constructs are reported with line numbers.
+- `importer/sync.ts` — applies edited code to the canvas (block matching, placement
+  of new blocks, when an edit is applied).
 - `palette/` — built-in palette: `nodes.json` (core blocks, hand-written) plus
   `components.generated.json`, produced by `npm run build:palette` from the
   versions pinned in `pinned-libraries.json`.
