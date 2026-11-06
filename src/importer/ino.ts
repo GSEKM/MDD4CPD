@@ -120,6 +120,26 @@ function splitTop(toks: Tok[], sep: string): Tok[][] {
     return parts.length === 1 && parts[0].length === 0 ? [] : parts;
 }
 
+/** Brackets that are never closed, or closed without being opened. */
+function unbalanced(toks: Tok[]): { line: number; message: string }[] {
+    const pairs: Record<string, string> = { ")": "(", "]": "[", "}": "{" };
+    const stack: Tok[] = [];
+    const out: { line: number; message: string }[] = [];
+    for (const t of toks) {
+        if (t.t !== "op") continue;
+        if (t.v === "(" || t.v === "[" || t.v === "{") stack.push(t);
+        else if (pairs[t.v]) {
+            if (stack[stack.length - 1]?.v === pairs[t.v]) stack.pop();
+            else {
+                out.push({ line: t.line, message: `Unexpected \`${t.v}\`` });
+                return out;
+            }
+        }
+    }
+    stack.forEach((t) => out.push({ line: t.line, message: `\`${t.v}\` is never closed` }));
+    return out;
+}
+
 function indexTop(toks: Tok[], pred: (t: Tok) => boolean): number {
     let depth = 0;
     for (let i = 0; i < toks.length; i++) {
@@ -254,6 +274,7 @@ export function importSketch(source: string, palette: any[]): SketchImport {
     // #endregion
 
     const toks = tokenize(lines.join("\n"));
+    unbalanced(toks).forEach((n) => b.note(n.line, n.message));
 
     // #region Top level: declarations and function definitions
     type Fn = { name: string; ret: string; params: Tok[]; body: Tok[]; line: number };
